@@ -1,0 +1,808 @@
+ /* 旋转动画 */
+ @keyframes spin {
+     0% {
+         transform: rotate(0deg);
+     }
+
+     100% {
+         transform: rotate(360deg);
+     }
+ }
+
+ :root {
+     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+ }
+
+ body {
+     margin: 0;
+     background: #0b1020;
+     color: #e8ecff;
+     min-height: 100vh;
+     padding: 20px;
+     box-sizing: border-box;
+ }
+
+ .container {
+     max-width: 1400px;
+     margin: 0 auto;
+ }
+
+ .header {
+     text-align: center;
+     margin-bottom: 30px;
+ }
+
+ .header h1 {
+     color: #ffffff;
+     margin: 0 0 10px 0;
+     font-size: 28px;
+     font-weight: 600;
+ }
+
+ .header p {
+     color: #a7b0d5;
+     margin: 0;
+     font-size: 16px;
+ }
+
+ .main-content {
+     display: grid;
+     grid-template-columns: 300px 1fr;
+     gap: 30px;
+     align-items: start;
+ }
+
+ .sidebar {
+     background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+     border: 1px solid #24315f;
+     border-radius: 14px;
+     padding: 20px;
+     position: sticky;
+     top: 20px;
+ }
+
+ .sidebar h3 {
+     margin: 0 0 15px 0;
+     font-size: 16px;
+     color: #ffffff;
+     border-bottom: 1px solid #24315f;
+     padding-bottom: 10px;
+ }
+
+ .message-types {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+ }
+
+ .type-button {
+     background: rgba(36, 49, 95, 0.4);
+     border: 1px solid #24315f;
+     border-radius: 8px;
+     padding: 12px 16px;
+     color: #e8ecff;
+     cursor: pointer;
+     transition: all 0.2s ease;
+     text-align: left;
+     font-size: 14px;
+ }
+
+ .type-button:hover {
+     background: rgba(52, 66, 111, 0.6);
+     border-color: #34426f;
+ }
+
+ .type-button.active {
+     background: linear-gradient(135deg, #4c6ef5, #3b5bdb);
+     border-color: #4c6ef5;
+     color: #ffffff;
+ }
+
+ .channels-section {
+     margin-top: 25px;
+     padding-top: 20px;
+     border-top: 1px solid #24315f;
+ }
+
+ .channels-grid {
+     display: grid;
+     grid-template-columns: 1fr 1fr;
+     gap: 8px;
+ }
+
+ .channel-checkbox {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     padding: 8px;
+     background: rgba(36, 49, 95, 0.2);
+     border-radius: 6px;
+     cursor: pointer;
+     transition: background 0.2s ease;
+ }
+
+ .channel-checkbox:hover {
+     background: rgba(36, 49, 95, 0.4);
+ }
+
+ .channel-checkbox input {
+     margin: 0;
+ }
+
+ .channel-checkbox label {
+     font-size: 13px;
+     cursor: pointer;
+     flex: 1;
+ }
+
+ .form-container {
+     background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+     border: 1px solid #24315f;
+     border-radius: 14px;
+     padding: 30px;
+ }
+
+ .form-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 25px;
+     padding-bottom: 15px;
+     border-bottom: 1px solid #24315f;
+ }
+
+ .form-title {
+     font-size: 20px;
+     font-weight: 600;
+     color: #ffffff;
+     margin: 0;
+ }
+
+ .form-fields {
+     display: grid;
+     gap: 20px;
+     margin-bottom: 30px;
+ }
+
+ .field-group {
+     display: grid;
+     gap: 8px;
+ }
+
+ .field-label {
+     font-size: 14px;
+     font-weight: 500;
+     color: #a7b0d5;
+     display: flex;
+     align-items: center;
+     gap: 5px;
+ }
+
+ .field-label .required {
+     color: #ff6b6b;
+     font-size: 12px;
+ }
+
+ .field-description {
+     font-size: 12px;
+     color: #7c8db5;
+     margin-top: 2px;
+ }
+
+ /* 发送状态样式 */
+ .status-section {
+     background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+     border: 1px solid #24315f;
+     border-radius: 12px;
+     padding: 15px;
+     overflow-x: auto;
+     min-width: 350px;
+ }
+
+ .status-section h4 {
+     margin: 0 0 10px 0;
+     font-size: 16px;
+     font-weight: 600;
+ }
+
+ .channel-status {
+     display: inline-flex;
+     align-items: center;
+     justify-content: flex-start;
+     padding: 8px 12px;
+     margin: 5px 8px 5px 0;
+     border-radius: 8px;
+     background: rgba(255, 255, 255, 0.05);
+     min-width: 200px;
+     max-width: none;
+     width: auto;
+     white-space: nowrap;
+     flex-shrink: 0;
+     gap: 8px;
+ }
+
+ .channel-status.success {
+     background: rgba(34, 197, 94, 0.1);
+     border-left: 3px solid #22c55e;
+ }
+
+ .channel-status.error {
+     background: rgba(239, 68, 68, 0.1);
+     border-left: 3px solid #ef4444;
+ }
+
+ .channel-status.pending {
+     background: rgba(251, 191, 36, 0.1);
+     border-left: 3px solid #fbbf24;
+ }
+
+ /* 响应式状态显示 */
+ @media (max-width: 768px) {
+     #sendingStatusDisplay>div {
+         flex-direction: column !important;
+     }
+
+     .status-section {
+         min-width: auto !important;
+         margin-bottom: 15px;
+     }
+ }
+
+ @media (max-width: 1200px) {
+     .status-section {
+         min-width: 250px;
+     }
+ }
+
+ .field-input {
+     background: rgba(11, 16, 32, 0.8);
+     border: 1px solid #24315f;
+     border-radius: 8px;
+     padding: 12px 16px;
+     color: #e8ecff;
+     font-size: 14px;
+     transition: border-color 0.2s ease;
+ }
+
+ .field-input:focus {
+     outline: none;
+     border-color: #4c6ef5;
+     box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
+ }
+
+ .field-input::placeholder {
+     color: #6c7b95;
+ }
+
+ textarea.field-input {
+     min-height: 80px;
+     resize: vertical;
+     font-family: inherit;
+ }
+
+ .array-field {
+     background: rgba(11, 16, 32, 0.6);
+     border: 1px solid #24315f;
+     border-radius: 8px;
+     padding: 16px;
+ }
+
+ .array-items {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+     margin-bottom: 12px;
+ }
+
+ .array-item {
+     display: flex;
+     gap: 8px;
+     align-items: center;
+ }
+
+ .array-item input {
+     flex: 1;
+ }
+
+ .array-remove {
+     background: #e03131;
+     border: none;
+     border-radius: 4px;
+     color: white;
+     padding: 8px 12px;
+     cursor: pointer;
+     font-size: 12px;
+ }
+
+ .array-add {
+     background: #37b24d;
+     border: none;
+     border-radius: 6px;
+     color: white;
+     padding: 8px 16px;
+     cursor: pointer;
+     font-size: 13px;
+     font-weight: 500;
+ }
+
+ .object-field {
+     background: rgba(11, 16, 32, 0.6);
+     border: 1px solid #24315f;
+     border-radius: 8px;
+     padding: 16px;
+ }
+
+ .object-field textarea {
+     width: 100%;
+     min-height: 120px;
+     background: rgba(11, 16, 32, 0.8);
+     border: 1px solid #24315f;
+     border-radius: 6px;
+     padding: 12px;
+     color: #e8ecff;
+ }
+
+ /* 附件上传样式 */
+ .attachment-field {
+     margin-bottom: 20px;
+ }
+
+ .attachment-upload-area {
+     margin-bottom: 15px;
+ }
+
+ .upload-zone {
+     border: 2px dashed #4c6ef5;
+     border-radius: 8px;
+     padding: 30px;
+     text-align: center;
+     cursor: pointer;
+     transition: all 0.3s ease;
+     background: rgba(76, 110, 245, 0.05);
+     position: relative;
+ }
+
+ .upload-zone:hover {
+     border-color: #364fc7;
+     background: rgba(76, 110, 245, 0.1);
+ }
+
+ .upload-zone.drag-over {
+     border-color: #22c55e;
+     background: rgba(34, 197, 94, 0.1);
+ }
+
+ .upload-icon {
+     font-size: 48px;
+     margin-bottom: 15px;
+ }
+
+ .upload-text p {
+     margin: 5px 0;
+     color: #8899bb;
+ }
+
+ .upload-hint {
+     font-size: 14px;
+     color: #6b7894;
+ }
+
+ .file-input {
+     position: absolute;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     opacity: 0;
+     cursor: pointer;
+ }
+
+ .attachment-list {
+     max-height: 300px;
+     overflow-y: auto;
+ }
+
+ .attachment-item {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 12px;
+     border: 1px solid #374151;
+     border-radius: 6px;
+     margin-bottom: 8px;
+     background: rgba(55, 65, 81, 0.3);
+ }
+
+ .attachment-info {
+     display: flex;
+     align-items: center;
+     flex: 1;
+ }
+
+ .file-icon {
+     font-size: 24px;
+     margin-right: 12px;
+ }
+
+ .file-details {
+     flex: 1;
+ }
+
+ .file-name {
+     font-weight: 500;
+     color: #e8ecff;
+     margin-bottom: 4px;
+ }
+
+ .file-meta {
+     font-size: 12px;
+     color: #8899bb;
+ }
+
+ .attachment-actions {
+     display: flex;
+     gap: 8px;
+ }
+
+ .btn-download,
+ .btn-remove {
+     background: none;
+     border: 1px solid #4c6ef5;
+     color: #4c6ef5;
+     padding: 6px 10px;
+     border-radius: 4px;
+     cursor: pointer;
+     font-size: 14px;
+     transition: all 0.2s ease;
+ }
+
+ .btn-download:hover {
+     background: #4c6ef5;
+     color: white;
+ }
+
+ .btn-remove {
+     border-color: #e03131;
+     color: #e03131;
+ }
+
+ .btn-remove:hover {
+     background: #e03131;
+     color: white;
+ }
+
+ .attachment-progress {
+     padding: 12px;
+     border: 1px solid #374151;
+     border-radius: 6px;
+     margin-bottom: 8px;
+     background: rgba(55, 65, 81, 0.3);
+ }
+
+ .progress-info {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 8px;
+ }
+
+ .progress-bar {
+     width: 100%;
+     height: 4px;
+     background: #374151;
+     border-radius: 2px;
+     overflow: hidden;
+ }
+
+ .progress-fill {
+     height: 100%;
+     background: #4c6ef5;
+     transition: width 0.3s ease;
+ }
+
+ .progress-status {
+     font-size: 12px;
+     color: #8899bb;
+ }
+
+ .actions {
+     display: flex;
+     gap: 15px;
+     justify-content: flex-end;
+     padding-top: 20px;
+     border-top: 1px solid #24315f;
+ }
+
+ .btn {
+     padding: 12px 24px;
+     border: none;
+     border-radius: 8px;
+     font-size: 14px;
+     font-weight: 500;
+     cursor: pointer;
+     transition: all 0.2s ease;
+ }
+
+ .btn-primary {
+     background: linear-gradient(135deg, #4c6ef5, #3b5bdb);
+     color: white;
+ }
+
+ .btn-primary:hover {
+     background: linear-gradient(135deg, #3b5bdb, #2f4fb3);
+ }
+
+ .btn-secondary {
+     background: rgba(36, 49, 95, 0.6);
+     color: #e8ecff;
+     border: 1px solid #24315f;
+ }
+
+ .btn-secondary:hover {
+     background: rgba(52, 66, 111, 0.8);
+ }
+
+ .btn-outline {
+     background: transparent;
+     color: #4c6ef5;
+     border: 1px solid #4c6ef5;
+ }
+
+ .btn-outline:hover {
+     background: rgba(76, 110, 245, 0.1);
+ }
+
+ .loading {
+     opacity: 0.6;
+     pointer-events: none;
+ }
+
+ .success-message,
+ .error-message {
+     padding: 12px 16px;
+     border-radius: 8px;
+     margin-bottom: 20px;
+     font-size: 14px;
+ }
+
+ .success-message {
+     background: rgba(55, 178, 77, 0.1);
+     border: 1px solid #37b24d;
+     color: #51cf66;
+ }
+
+ .error-message {
+     background: rgba(224, 49, 49, 0.1);
+     border: 1px solid #e03131;
+     color: #ff6b6b;
+ }
+
+ /* 接收者信息区域样式 */
+ .recipients-section {
+     margin-top: 30px;
+     padding: 20px;
+     background: rgba(36, 49, 95, 0.3);
+     border-radius: 12px;
+     border: 1px solid #24315f;
+ }
+
+ .recipients-section h3 {
+     color: #ffffff;
+     font-size: 16px;
+     font-weight: 600;
+     margin-bottom: 15px;
+ }
+
+ .recipient-group {
+     margin-bottom: 20px;
+ }
+
+ .recipient-group:last-child {
+     margin-bottom: 0;
+ }
+
+ .recipient-channel-label {
+     color: #a7b0d5;
+     font-size: 14px;
+     font-weight: 500;
+     margin-bottom: 8px;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+ }
+
+ .recipient-channel-label .channel-icon {
+     width: 16px;
+     height: 16px;
+     border-radius: 50%;
+     display: inline-block;
+ }
+
+ .channel-icon.web {
+     background: #4c6ef5;
+ }
+
+ .channel-icon.email {
+     background: #f59f00;
+ }
+
+ .channel-icon.sms {
+     background: #51cf66;
+ }
+
+ .channel-icon.voice {
+     background: #ff6b6b;
+ }
+
+ .recipient-input-group {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+ }
+
+ .recipient-input {
+     background: rgba(11, 16, 32, 0.8);
+     border: 1px solid #24315f;
+     border-radius: 8px;
+     padding: 10px 14px;
+     color: #e8ecff;
+     font-size: 14px;
+     transition: border-color 0.2s ease;
+ }
+
+ .recipient-input:focus {
+     outline: none;
+     border-color: #4c6ef5;
+     box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+ }
+
+ .recipient-input::placeholder {
+     color: #7c8db5;
+ }
+
+ .recipient-tags {
+     display: flex;
+     flex-wrap: wrap;
+     gap: 6px;
+     margin-top: 8px;
+ }
+
+ .recipient-tag {
+     background: rgba(76, 110, 245, 0.2);
+     color: #4c6ef5;
+     padding: 4px 8px;
+     border-radius: 4px;
+     font-size: 12px;
+     display: flex;
+     align-items: center;
+     gap: 4px;
+     border: 1px solid transparent;
+     transition: all 0.2s ease;
+ }
+
+ .recipient-tag.invalid {
+     background: rgba(224, 49, 49, 0.2);
+     color: #ff6b6b;
+     border-color: #ff6b6b;
+ }
+
+ .recipient-tag .remove-tag {
+     cursor: pointer;
+     color: #ff6b6b;
+     font-weight: bold;
+ }
+
+ .recipient-tag .remove-tag:hover {
+     color: #e03131;
+ }
+
+ /* 添加通道状态指示器 */
+ .channel-status {
+     display: inline-block;
+     width: 8px;
+     height: 8px;
+     border-radius: 50%;
+     margin-left: 8px;
+ }
+
+ .channel-status.valid {
+     background: #51cf66;
+ }
+
+ .channel-status.invalid {
+     background: #ff6b6b;
+ }
+
+ .channel-status.empty {
+     background: #868e96;
+ }
+
+ .help-text {
+     font-size: 12px;
+     color: #7c8db5;
+     margin-top: 4px;
+ }
+
+ /* 响应式设计 */
+ @media (max-width: 1200px) {
+     .main-content {
+         grid-template-columns: 1fr;
+         gap: 20px;
+     }
+
+     .sidebar {
+         position: static;
+     }
+ }
+
+ @media (max-width: 768px) {
+     body {
+         padding: 10px;
+     }
+
+     .channels-grid {
+         grid-template-columns: 1fr;
+     }
+
+     .actions {
+         flex-direction: column;
+     }
+
+     .btn {
+         width: 100%;
+     }
+ }
+
+ /* JSON编辑器美化 */
+ .json-editor {
+     position: relative;
+ }
+
+ .json-editor .field-input {
+     font-family: 'Courier New', monospace;
+     font-size: 13px;
+     line-height: 1.4;
+ }
+
+ .json-preview {
+     background: rgba(11, 16, 32, 0.9);
+     border: 1px solid #24315f;
+     border-radius: 8px;
+     padding: 16px;
+     margin-top: 10px;
+     max-height: 200px;
+     overflow-y: auto;
+ }
+
+ .json-preview pre {
+     margin: 0;
+     color: #a7b0d5;
+     font-family: 'Courier New', monospace;
+     font-size: 12px;
+     line-height: 1.4;
+ }
+
+ /* 状态指示器 */
+ .status-indicator {
+     display: inline-block;
+     width: 8px;
+     height: 8px;
+     border-radius: 50%;
+     margin-right: 8px;
+ }
+
+ .status-success {
+     background: #37b24d;
+ }
+
+ .status-error {
+     background: #e03131;
+ }
+
+ .status-warning {
+     background: #f59f00;
+ }
+
+ .status-info {
+     background: #4c6ef5;
+ }

@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>推送记录查询 - 推送服务管理中心</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        body {
+            margin: 0;
+            background: #0b1020;
+            color: #e8ecff;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #4c6ef5, #3b5bdb);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .back-btn:hover {
+            opacity: 0.9;
+        }
+
+        .filters {
+            background: rgba(20, 30, 70, 0.3);
+            border: 1px solid #24315f;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            color: #a7b0d5;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            background: rgba(10, 15, 35, 0.8);
+            border: 1px solid #34426f;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #e8ecff;
+            font-size: 14px;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #4c6ef5;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4c6ef5, #3b5bdb);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: rgba(20, 30, 70, 0.5);
+            border: 1px solid #34426f;
+        }
+
+        .stats-bar {
+            background: rgba(20, 30, 70, 0.2);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #4c6ef5;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #a7b0d5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .records-table {
+            background: rgba(20, 30, 70, 0.2);
+            border: 1px solid #24315f;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            background: rgba(30, 40, 80, 0.5);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .pagination button {
+            background: rgba(76, 110, 245, 0.1);
+            border: 1px solid #4c6ef5;
+            color: #4c6ef5;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: rgba(76, 110, 245, 0.2);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .current {
+            background: #4c6ef5;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 1px solid #24315f;
+        }
+
+        th {
+            background: rgba(30, 40, 80, 0.3);
+            color: #a7b0d5;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        td {
+            color: #e8ecff;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .priority-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .priority-normal {
+            background: rgba(76, 110, 245, 0.2);
+            color: #4c6ef5;
+        }
+
+        .priority-low {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+        }
+
+        .message-preview {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .channels-list {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .channel-tag {
+            background: rgba(76, 110, 245, 0.2);
+            color: #4c6ef5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #a7b0d5;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #ef4444;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #a7b0d5;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .table-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+            .message-preview {
+                max-width: 120px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>推送记录查询</h1>
+            <a href="/" class="back-btn">
+                ← 返回首页
+            </a>
+        </div>
+
+        <div class="filters">
+            <div class="filter-row">
+                <!-- 隐藏命名空间输入框，使用默认值 -->
+                <input type="hidden" id="namespaceFilter" value="push-dev2">
+                <div class="filter-group">
+                    <label>消息类型</label>
+                    <select id="kindFilter">
+                        <option value="">全部类型</option>
+                        <option value="inapp">站内信</option>
+                        <option value="email">邮件</option>
+                        <option value="sms">短信</option>
+                        <option value="voice">语音</option>
+                        <option value="alert">告警</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>推送状态</label>
+                    <select id="statusFilter">
+                        <option value="">全部状态</option>
+                        <option value="success">成功</option>
+                        <option value="pending">等待中</option>
+                        <option value="failed">失败</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>优先级</label>
+                    <select id="priorityFilter">
+                        <option value="">全部优先级</option>
+                        <option value="2">高</option>
+                        <option value="1">普通</option>
+                        <option value="0">低</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>每页条数</label>
+                    <select id="pageSizeSelect">
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn" onclick="applyFilters()">查询</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">重置</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stats-group">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalCount">-</div>
+                    <div class="stat-label">总记录数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="successCount">-</div>
+                    <div class="stat-label">成功</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="pendingCount">-</div>
+                    <div class="stat-label">等待中</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="failedCount">-</div>
+                    <div class="stat-label">失败</div>
+                </div>
+            </div>
+            <div class="table-actions">
+                <button class="btn btn-secondary" onclick="refreshData()">刷新</button>
+                <button class="btn btn-secondary" onclick="exportData()">导出</button>
+            </div>
+        </div>
+
+        <div class="records-table">
+            <div class="table-header">
+                <div class="table-title">推送记录列表</div>
+                <div class="pagination" id="pagination">
+                    <!-- 分页按钮将在这里动态生成 -->
+                </div>
+            </div>
+
+            <div id="tableContent">
+                <div class="loading">正在加载数据...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let pageSize = 20;
+        let totalPages = 1;
+        let currentFilters = {};
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function () {
+            // 不设置默认时间范围，显示所有记录
+            // const now = new Date();
+            // const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            // document.getElementById('endTime').value = formatDateForInput(now);
+            // document.getElementById('startTime').value = formatDateForInput(yesterday);
+
+            // 加载数据
+            loadData();
+            loadStats();
+        });
+
+        // 应用筛选条件
+        function applyFilters() {
+            currentPage = 1;
+            loadData();
+            loadStats();
+        }
+
+        // 重置筛选条件
+        function resetFilters() {
+            document.getElementById('namespaceFilter').value = 'push-dev2'; // 保持默认namespace
+            document.getElementById('kindFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('priorityFilter').value = '';
+
+            currentPage = 1;
+            loadData();
+            loadStats();
+        }
+
+        // 获取当前筛选条件
+        function getFilters() {
+            const filters = {};
+
+            const namespace = document.getElementById('namespaceFilter').value.trim();
+            if (namespace) filters.namespace = namespace;
+
+            const kind = document.getElementById('kindFilter').value;
+            if (kind) filters.kind = kind;
+
+            const status = document.getElementById('statusFilter').value;
+            if (status) filters.status = status;
+
+            const priority = document.getElementById('priorityFilter').value;
+            if (priority !== '') filters.priority = parseInt(priority);
+
+            return filters;
+        }
+
+        // 构建查询参数
+        function buildQueryParams(filters, page, size) {
+            const params = new URLSearchParams();
+
+            Object.keys(filters).forEach(key => {
+                if (filters[key] !== undefined && filters[key] !== '') {
+                    params.append(key, filters[key]);
+                }
+            });
+
+            params.append('page', page);
+            params.append('page_size', size);
+
+            return params;
+        }
+
+        // 加载推送记录数据
+        async function loadData() {
+            try {
+                currentFilters = getFilters();
+                pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+
+                const params = buildQueryParams(currentFilters, currentPage, pageSize);
+                console.log('请求参数:', params);
+
+                const response = await fetch(`/v1/push-records?${params}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('API响应:', result);
+
+                if (result.success) {
+                    console.log('记录数量:', result.data.records ? result.data.records.length : 0);
+                    renderTable(result.data.records || []);
+                    updatePagination(result.data.pagination);
+                } else {
+                    throw new Error(result.message || '加载数据失败');
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('tableContent').innerHTML = `
+                    <div class="error">加载数据失败: ${error.message}</div>
+                `;
+            }
+        }
+
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                const filters = getFilters();
+                const params = buildQueryParams(filters, 1, 1);
+
+                const response = await fetch(`/v1/push-records/stats?${params}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const stats = result.data;
+                    document.getElementById('totalCount').textContent = stats.total || 0;
+                    document.getElementById('successCount').textContent = stats.success || 0;
+                    document.getElementById('pendingCount').textContent = stats.pending || 0;
+                    document.getElementById('failedCount').textContent = stats.failed || 0;
+                } else {
+                    throw new Error(result.message || '加载统计数据失败');
+                }
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+                document.getElementById('totalCount').textContent = '?';
+                document.getElementById('successCount').textContent = '?';
+                document.getElementById('pendingCount').textContent = '?';
+                document.getElementById('failedCount').textContent = '?';
+            }
+        }
+
+        // 渲染表格
+        function renderTable(records) {
+            if (!records || records.length === 0) {
+                document.getElementById('tableContent').innerHTML = `
+                    <div class="empty">没有找到符合条件的推送记录</div>
+                `;
+                return;
+            }
+
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>命名空间</th>
+                            <th>类型</th>
+                            <th>主题/内容</th>
+                            <th>通道</th>
+                            <th>状态</th>
+                            <th>优先级</th>
+                            <th>创建时间</th>
+                            <th>发送时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${records.map(record => `
+                            <tr>
+                                <td title="${record.id || ''}">${(record.id || '').substring(0, 8)}${record.id && record.id.length > 8 ? '...' : ''}</td>
+                                <td>${record.namespace || '-'}</td>
+                                <td>${record.kind || '-'}</td>
+                                <td>
+                                    <div class="message-preview" title="${record.subject || record.body || '-'}">
+                                        ${record.subject || record.body || '-'}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="channels-list">
+                                        ${(record.channels || []).map(channel =>
+                `<span class="channel-tag">${channel}</span>`
+            ).join('')}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-${record.status}">
+                                        ${record.status}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="priority-badge priority-${getPriorityClass(record.priority)}">
+                                        ${getPriorityText(record.priority)}
+                                    </span>
+                                </td>
+                                <td>${formatTimestamp(record.created_at)}</td>
+                                <td>${record.sent_at ? formatTimestamp(record.sent_at) : '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('tableContent').innerHTML = tableHTML;
+        }
+
+        // 更新分页
+        function updatePagination(pagination) {
+            if (!pagination) return;
+
+            totalPages = pagination.total_pages;
+            currentPage = pagination.current_page;
+
+            const paginationHTML = `
+                <button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button>
+                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
+                <span class="current">${currentPage} / ${totalPages}</span>
+                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>
+                <button onclick="changePage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>末页</button>
+            `;
+
+            document.getElementById('pagination').innerHTML = paginationHTML;
+        }
+
+        // 切换页面
+        function changePage(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            currentPage = page;
+            loadData();
+        }
+
+        // 刷新数据
+        function refreshData() {
+            loadData();
+            loadStats();
+        }
+
+        // 导出数据
+        function exportData() {
+            const filters = getFilters();
+            const params = buildQueryParams(filters, 1, 10000); // 导出最多10000条
+            const url = `/v1/push-records?${params}&export=csv`;
+            window.open(url, '_blank');
+        }
+
+        // 获取优先级样式类
+        function getPriorityClass(priority) {
+            switch (priority) {
+                case 2: return 'high';
+                case 1: return 'normal';
+                case 0: return 'low';
+                default: return 'normal';
+            }
+        }
+
+        // 获取优先级文本
+        function getPriorityText(priority) {
+            switch (priority) {
+                case 2: return '高';
+                case 1: return '普通';
+                case 0: return '低';
+                default: return '普通';
+            }
+        }
+
+        // 格式化时间戳
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '-';
+            // 检查时间戳格式：如果小于10^13，说明是秒时间戳，需要转换为毫秒
+            const ms = timestamp < 10000000000000 ? timestamp * 1000 : timestamp;
+            const date = new Date(ms);
+
+            // 调试日志（可以删除）
+            if (timestamp !== 0) {
+                console.log(`时间戳转换: ${timestamp} -> ${ms} -> ${date.toISOString()}`);
+            }
+
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // 页面大小改变时重新加载
+        document.getElementById('pageSizeSelect').addEventListener('change', function () {
+            currentPage = 1;
+            loadData();
+        });
+
+        // 自动刷新机制 - 每5秒刷新一次数据
+        let autoRefreshInterval;
+
+        function startAutoRefresh() {
+            // 清除之前的定时器
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+
+            // 设置新的定时器
+            autoRefreshInterval = setInterval(() => {
+                console.log('自动刷新数据...');
+                loadData();
+                loadStats();
+            }, 5000); // 5秒刷新一次
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // 页面加载完成后启动自动刷新
+        window.addEventListener('load', () => {
+            startAutoRefresh();
+        });
+
+        // 页面失去焦点时停止自动刷新，获得焦点时重新开始
+        window.addEventListener('blur', stopAutoRefresh);
+        window.addEventListener('focus', startAutoRefresh);
+
+        // 添加键盘快捷键
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey) {
+                switch (e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        applyFilters();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        refreshData();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Push Gateway",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/server",
+            "env": {},
+            "args": []
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Start infra + Run server",
+            "configurations": [
+                "Run Push Gateway"
+            ],
+            "preLaunchTask": "infra: up"
+        }
+    ]
+}

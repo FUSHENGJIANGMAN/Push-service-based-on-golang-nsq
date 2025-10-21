@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "infra: up",
+            "type": "shell",
+            "command": "docker compose up -d",
+            "problemMatcher": []
+        },
+        {
+            "label": "infra: down",
+            "type": "shell",
+            "command": "docker compose down -v",
+            "problemMatcher": []
+        },
+        {
+            "label": "demo: send message",
+            "type": "shell",
+            "command": "curl -sS -X POST http://localhost:8080/v1/push -H 'Content-Type: application/json' -d @demo/demo.json | jq .",
+            "problemMatcher": []
+        }
+    ]
+}

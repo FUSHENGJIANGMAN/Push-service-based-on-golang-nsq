@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>推送服务管理中心</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        body {
+            margin: 0;
+            background: #0b1020;
+            color: #e8ecff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            margin: 0 0 15px 0;
+            font-size: 36px;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: #a7b0d5;
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .service-card {
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .service-card:hover {
+            background: linear-gradient(180deg, rgba(30, 40, 80, .4), rgba(15, 20, 45, .5));
+            border-color: #34426f;
+            transform: translateY(-2px);
+        }
+
+        .service-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4c6ef5, #3b5bdb);
+            border-radius: 12px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .service-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0 0 10px 0;
+        }
+
+        .service-description {
+            color: #a7b0d5;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .stats {
+            background: rgba(20, 30, 70, 0.2);
+            border: 1px solid #24315f;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        .stats h3 {
+            color: #ffffff;
+            margin: 0 0 15px 0;
+            font-size: 18px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #4c6ef5;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #a7b0d5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #24315f;
+            color: #7c8db5;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #4c6ef5;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .header p {
+                font-size: 16px;
+            }
+
+            .services {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .service-card {
+                padding: 25px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container>* {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .service-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .service-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .stats {
+            animation-delay: 0.3s;
+        }
+
+        .footer {
+            animation-delay: 0.4s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>推送服务管理中心</h1>
+            <p>统一的消息推送平台，支持多种消息类型和传输通道<br>
+                提供完整的消息发送、接收和管理功能</p>
+        </div>
+
+        <div class="services">
+            <a href="/message-sender" class="service-card">
+                <div class="service-icon">📤</div>
+                <h3 class="service-title">消息发送</h3>
+                <p class="service-description">
+                    创建和发送各种类型的消息，支持站内信、邮件、短信、语音等多种通道。
+                    可根据配置动态生成表单，支持批量发送和定时发送。
+                </p>
+            </a>
+
+            <a href="/dynamic-inbox" class="service-card">
+                <div class="service-icon">📥</div>
+                <h3 class="service-title">消息收件箱</h3>
+                <p class="service-description">
+                    查看和管理接收到的消息，支持按状态筛选、批量操作。
+                    提供实时更新和丰富的消息展示功能。
+                </p>
+            </a>
+
+            <a href="/email-attachments" class="service-card">
+                <div class="service-icon">📎</div>
+                <h3 class="service-title">邮件附件管理</h3>
+                <p class="service-description">
+                    高级邮件附件功能，支持文件上传、批量附件、MIME类型检测。
+                    适用于需要复杂附件处理的邮件发送场景。
+                </p>
+            </a>
+
+            <a href="/push-records" class="service-card">
+                <div class="service-icon">📊</div>
+                <h3 class="service-title">推送记录查询</h3>
+                <p class="service-description">
+                    查看和分析所有类型的消息推送记录，支持多条件筛选、状态统计。
+                    实时监控推送状态，提供详细的推送历史和错误分析。
+                </p>
+            </a>
+        </div>
+
+        <div class="stats">
+            <h3>系统状态</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="messageTypes">-</div>
+                    <div class="stat-label">消息类型</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">传输通道</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="serverStatus">运行中</div>
+                    <div class="stat-label">服务状态</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="currentTime">-</div>
+                    <div class="stat-label">当前时间</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                推送服务管理平台 v8.5 |
+                <a href="/v1/push" target="_blank">API 文档</a> |
+                <a href="https://github.com" target="_blank">GitHub</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 更新当前时间
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // 加载消息类型数量
+        async function loadMessageTypesCount() {
+            try {
+                const response = await fetch('/dynamic-inbox/message-formats');
+                const result = await response.json();
+                const count = Object.keys(result.data).length;
+                document.getElementById('messageTypes').textContent = count;
+            } catch (error) {
+                console.error('Failed to load message types:', error);
+                document.getElementById('messageTypes').textContent = '?';
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            updateTime();
+            setInterval(updateTime, 1000);
+            loadMessageTypesCount();
+        });
+
+        // 添加键盘快捷键
+        document.addEventListener('keydown', function (e) {
+            if (e.altKey) {
+                switch (e.key) {
+                    case '1':
+                        window.location.href = '/message-sender';
+                        break;
+                    case '2':
+                        window.location.href = '/dynamic-inbox';
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

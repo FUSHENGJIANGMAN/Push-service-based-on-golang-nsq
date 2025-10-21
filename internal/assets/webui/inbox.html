@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>消息收件箱</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        body {
+            margin: 0;
+            background: #0b1020;
+            color: #e8ecff;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 14px;
+            padding: 16px;
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #a7b0d5;
+        }
+
+        .type-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .type-item {
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .type-item:hover {
+            background: rgba(30, 40, 80, 0.5);
+            border-color: #24315f;
+        }
+
+        .type-item.active {
+            background: #1a274f;
+            border-color: #263469;
+            color: #a3c5ff;
+        }
+
+        .type-count {
+            font-size: 12px;
+            background: #24315f;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-container {
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 14px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .table-header {
+            background: #1a274f;
+            padding: 12px 16px;
+            border-bottom: 1px solid #24315f;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .table-title {
+            font-weight: 600;
+            font-size: 16px;
+            flex: 1;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .message-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .message-table th {
+            background: #141e46;
+            color: #a7b0d5;
+            font-weight: 500;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #24315f;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .message-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(36, 49, 95, 0.3);
+            vertical-align: top;
+        }
+
+        .message-table tr:hover {
+            background: rgba(30, 40, 80, 0.2);
+        }
+
+        .message-table tr.unread {
+            border-left: 3px solid #4a9eff;
+        }
+
+        .message-table tr.read {
+            opacity: 0.7;
+        }
+
+        .cell-content {
+            max-width: 200px;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .cell-json {
+            font-family: 'Courier New', monospace;
+            background: rgba(20, 30, 70, 0.5);
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .message-kind {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .kind-msg {
+            background: #1a4b1a;
+            color: #7bd87b;
+        }
+
+        .kind-notification {
+            background: #1a3a4b;
+            color: #7bb8d8;
+        }
+
+        .kind-alert {
+            background: #4b1a1a;
+            color: #d87b7b;
+        }
+
+        .kind-inapp {
+            background: #3a3a1a;
+            color: #d8d87b;
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        header h1 {
+            font-size: 20px;
+            margin: 0 12px 0 0;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+
+        input,
+        select,
+        button {
+            background: #121a35;
+            color: #e8ecff;
+            border: 1px solid #24315f;
+            padding: 8px 10px;
+            border-radius: 10px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .card {
+            border: 1px solid #24315f;
+            border-radius: 14px;
+            padding: 12px;
+            background: linear-gradient(180deg, rgba(20, 30, 70, .5), rgba(10, 15, 35, .6));
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .05);
+            display: grid;
+            gap: 6px;
+        }
+
+        .meta {
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+            color: #a7b0d5;
+            align-items: center;
+        }
+
+        .subject {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .body {
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #d5dcff;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .empty {
+            opacity: .7;
+            padding: 32px 0;
+            text-align: center;
+            grid-column: 1 / -1;
+        }
+
+        .pager {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(20, 30, 70, 0.2);
+            border-radius: 10px;
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #1a274f;
+            border: 1px solid #263469;
+            font-size: 12px;
+            color: #b8c3f5;
+        }
+
+        a {
+            color: #a3c5ff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <h1>消息收件箱</h1>
+            <span class="badge" id="totalBadge">共 0 条</span>
+            <div class="controls">
+                <label>用户ID：</label>
+                <input id="userId" placeholder="u1" />
+                <label>状态：</label>
+                <select id="status">
+                    <option value="all">全部</option>
+                    <option value="unread">未读</option>
+                    <option value="read">已读</option>
+                </select>
+                <button id="btnLoad">刷新</button>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <div class="sidebar">
+                <h3>消息类型</h3>
+                <div class="type-filter" id="typeFilter">
+                    <div class="type-item active" data-type="all">
+                        <span>全部消息</span>
+                        <span class="type-count" id="count-all">0</span>
+                    </div>
+                    <div class="type-item" data-type="msg">
+                        <span>应用消息</span>
+                        <span class="type-count" id="count-msg">0</span>
+                    </div>
+                    <div class="type-item" data-type="notification">
+                        <span>系统通知</span>
+                        <span class="type-count" id="count-notification">0</span>
+                    </div>
+                    <div class="type-item" data-type="alert">
+                        <span>警报消息</span>
+                        <span class="type-count" id="count-alert">0</span>
+                    </div>
+                    <div class="type-item" data-type="inapp">
+                        <span>站内消息</span>
+                        <span class="type-count" id="count-inapp">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title" id="tableTitle">全部消息</div>
+                        <label>每页：</label>
+                        <select id="limit">
+                            <option>10</option>
+                            <option selected>20</option>
+                            <option>50</option>
+                        </select>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="message-table" id="messageTable">
+                            <thead>
+                                <tr>
+                                    <th width="40">选择</th>
+                                    <th width="60">ID</th>
+                                    <th width="80">类型</th>
+                                    <th width="200">标题</th>
+                                    <th width="300">内容</th>
+                                    <th width="100">用户</th>
+                                    <th width="120">创建时间</th>
+                                    <th width="60">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="messageTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="empty" class="empty" style="display:none;">
+                        暂无消息数据
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <button id="btnMarkRead" disabled>标记为已读</button>
+                    <button id="btnDelete" disabled style="background: #d63031; margin-left: 10px;">删除消息</button>
+                    <span id="selectedHint" class="badge" style="display:none;"></span>
+                </div>
+
+                <div class="pager">
+                    <button id="prev">上一页</button>
+                    <span id="pageInfo" class="badge">第 1 页</span>
+                    <button id="next">下一页</button>
+                </div>
+            </div>
+        </div>
+
+        <p style="opacity:.6;margin-top:24px;">
+            打开方式：访问 <code>/inbox?user_id=u1</code>（URL上的 <code>user_id</code> 会自动带入输入框）
+        </p>
+    </div>
+
+    <script>
+        (function () {
+            const qs = new URLSearchParams(location.search);
+            const els = {
+                userId: document.getElementById('userId'),
+                status: document.getElementById('status'),
+                limit: document.getElementById('limit'),
+                btnLoad: document.getElementById('btnLoad'),
+                btnMarkRead: document.getElementById('btnMarkRead'),
+                btnDelete: document.getElementById('btnDelete'),
+                selectedHint: document.getElementById('selectedHint'),
+                messageTableBody: document.getElementById('messageTableBody'),
+                empty: document.getElementById('empty'),
+                totalBadge: document.getElementById('totalBadge'),
+                prev: document.getElementById('prev'),
+                next: document.getElementById('next'),
+                pageInfo: document.getElementById('pageInfo'),
+                tableTitle: document.getElementById('tableTitle'),
+                typeFilter: document.getElementById('typeFilter'),
+            };
+
+            let state = {
+                offset: 0,
+                limit: parseInt(els.limit.value, 10) || 20,
+                total: 0,
+                selected: new Set(),
+                currentType: 'all',
+                allMessages: [],
+                typeCounts: { all: 0, msg: 0, notification: 0, alert: 0, inapp: 0 }
+            };
+
+            if (qs.get('user_id')) els.userId.value = qs.get('user_id');
+            if (qs.get('status')) els.status.value = qs.get('status');
+
+            // 事件监听器
+            els.limit.addEventListener('change', () => {
+                state.limit = parseInt(els.limit.value, 10) || 20;
+                state.offset = 0;
+                filterAndRender();
+            });
+
+            els.btnLoad.addEventListener('click', () => {
+                state.offset = 0;
+                load();
+            });
+
+            els.prev.addEventListener('click', () => {
+                state.offset = Math.max(0, state.offset - state.limit);
+                filterAndRender();
+            });
+
+            els.next.addEventListener('click', () => {
+                if (state.offset + state.limit < getFilteredMessages().length) {
+                    state.offset += state.limit;
+                    filterAndRender();
+                }
+            });            // 消息类型筛选
+            els.typeFilter.addEventListener('click', (e) => {
+                const item = e.target.closest('.type-item');
+                if (!item) return;
+
+                document.querySelectorAll('.type-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+
+                state.currentType = item.dataset.type;
+                state.offset = 0;
+                updateTableTitle();
+                updateTableStructure(); // 更新表头
+                filterAndRender();
+            });
+
+            els.btnMarkRead.addEventListener('click', async () => {
+                if (state.selected.size === 0) return;
+                const user_id = els.userId.value.trim();
+                const ids = Array.from(state.selected);
+                try {
+                    const resp = await fetch('/v1/inbox/mark_read', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id, ids }),
+                    });
+                    if (!resp.ok) throw new Error('mark_read failed');
+                    state.selected.clear();
+                    updateSelectionHint();
+                    await load();
+                } catch (e) {
+                    alert('标记失败：' + e.message);
+                }
+            });
+
+            els.btnDelete.addEventListener('click', async () => {
+                if (state.selected.size === 0) return;
+                if (!confirm(`确定要删除选中的 ${state.selected.size} 条消息吗？此操作不可撤销！`)) return;
+
+                const user_id = els.userId.value.trim();
+                const ids = Array.from(state.selected);
+                try {
+                    const resp = await fetch('/v1/inbox/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id, ids }),
+                    });
+                    if (!resp.ok) throw new Error('delete failed');
+                    const result = await resp.json();
+                    state.selected.clear();
+                    updateSelectionHint();
+                    await load();
+                    alert(`成功删除 ${result.deleted} 条消息`);
+                } catch (e) {
+                    alert('删除失败：' + e.message);
+                }
+            });
+
+            function updateTableTitle() {
+                const titles = {
+                    'all': '全部消息',
+                    'msg': '应用消息',
+                    'notification': '系统通知',
+                    'alert': '警报消息',
+                    'inapp': '站内消息'
+                };
+                els.tableTitle.textContent = titles[state.currentType] || '消息列表';
+            }
+
+            // 根据消息类型定义字段配置
+            const messageFieldConfigs = {
+                'msg': [
+                    { key: 'id', label: 'ID', width: '60px' },
+                    { key: 'appId', label: '应用ID', width: '100px' },
+                    { key: 'type', label: '消息类型', width: '80px' },
+                    { key: 'content', label: '内容', width: '250px' },
+                    { key: 'receivers', label: '接收人', width: '120px' },
+                    { key: 'sender', label: '发送人', width: '80px' },
+                    { key: 'created_at', label: '创建时间', width: '140px' },
+                    { key: 'read_at', label: '状态', width: '60px' }
+                ],
+                'notification': [
+                    { key: 'id', label: 'ID', width: '60px' },
+                    { key: 'title', label: '标题', width: '200px' },
+                    { key: 'body', label: '内容', width: '300px' },
+                    { key: 'userIds', label: '用户列表', width: '120px' },
+                    { key: 'sender', label: '发送人', width: '80px' },
+                    { key: 'created_at', label: '创建时间', width: '140px' },
+                    { key: 'read_at', label: '状态', width: '60px' }
+                ],
+                'alert': [
+                    { key: 'id', label: 'ID', width: '60px' },
+                    { key: 'severity', label: '严重级别', width: '100px' },
+                    { key: 'message', label: '警报信息', width: '250px' },
+                    { key: 'timestamp', label: '警报时间', width: '140px' },
+                    { key: 'userIds', label: '用户列表', width: '120px' },
+                    { key: 'sender', label: '发送人', width: '80px' },
+                    { key: 'created_at', label: '创建时间', width: '140px' },
+                    { key: 'read_at', label: '状态', width: '60px' }
+                ],
+                'inapp': [
+                    { key: 'id', label: 'ID', width: '60px' },
+                    { key: 'kind', label: '类型', width: '80px' },
+                    { key: 'subject', label: '标题', width: '200px' },
+                    { key: 'body', label: '内容', width: '300px' },
+                    { key: 'user_id', label: '用户', width: '100px' },
+                    { key: 'created_at', label: '创建时间', width: '140px' },
+                    { key: 'read_at', label: '状态', width: '60px' }
+                ],
+                'all': [
+                    { key: 'id', label: 'ID', width: '60px' },
+                    { key: 'kind', label: '类型', width: '80px' },
+                    { key: 'subject', label: '标题', width: '150px' },
+                    { key: 'body', label: '内容', width: '200px' },
+                    { key: 'user_id', label: '用户', width: '80px' },
+                    { key: 'created_at', label: '创建时间', width: '140px' },
+                    { key: 'read_at', label: '状态', width: '60px' },
+                    { key: 'data', label: '原始数据', width: '200px' }
+                ]
+            };
+
+            function updateTableStructure() {
+                const config = messageFieldConfigs[state.currentType] || messageFieldConfigs['all'];
+                const table = document.getElementById('messageTable');
+                const thead = table.querySelector('thead tr');
+
+                // 重建表头
+                thead.innerHTML = '<th width="40">选择</th>';
+                config.forEach(field => {
+                    thead.innerHTML += `<th width="${field.width}">${field.label}</th>`;
+                });
+            }
+
+            function getFilteredMessages() {
+                if (state.currentType === 'all') {
+                    return state.allMessages;
+                }
+                return state.allMessages.filter(msg => msg.kind === state.currentType);
+            }
+
+            function updateTypeCounts() {
+                // 重置计数
+                state.typeCounts = { all: 0, msg: 0, notification: 0, alert: 0, inapp: 0 };
+
+                // 统计各类型消息数量
+                state.allMessages.forEach(msg => {
+                    state.typeCounts.all++;
+                    if (state.typeCounts[msg.kind] !== undefined) {
+                        state.typeCounts[msg.kind]++;
+                    }
+                });
+
+                // 更新显示
+                Object.keys(state.typeCounts).forEach(type => {
+                    const el = document.getElementById(`count-${type}`);
+                    if (el) el.textContent = state.typeCounts[type];
+                });
+            }
+
+            function updateSelectionHint() {
+                const n = state.selected.size;
+                els.btnMarkRead.disabled = n === 0;
+                els.btnDelete.disabled = n === 0;
+                els.selectedHint.style.display = n ? '' : 'none';
+                els.selectedHint.textContent = `已选 ${n} 条`;
+            }
+
+            function formatCellContent(value, key) {
+                if (value === null || value === undefined) {
+                    return '<span style="opacity:0.5">-</span>';
+                }
+
+                if (typeof value === 'object') {
+                    return `<div class="cell-json">${JSON.stringify(value, null, 2)}</div>`;
+                }
+
+                if (typeof value === 'string' && value.length > 100) {
+                    return `<div class="cell-content" title="${value}">${value.substring(0, 100)}...</div>`;
+                }
+
+                return `<div class="cell-content">${value}</div>`;
+            }
+
+            function getKindBadge(kind) {
+                const kindClass = `kind-${kind}`;
+                return `<span class="message-kind ${kindClass}">${kind}</span>`;
+            } function render() {
+                const filteredMessages = getFilteredMessages();
+                const startIndex = state.offset;
+                const endIndex = Math.min(startIndex + state.limit, filteredMessages.length);
+                const pageMessages = filteredMessages.slice(startIndex, endIndex);
+                const config = messageFieldConfigs[state.currentType] || messageFieldConfigs['all'];
+
+                els.messageTableBody.innerHTML = '';
+
+                if (pageMessages.length === 0) {
+                    els.empty.style.display = '';
+                    return;
+                }
+                els.empty.style.display = 'none';
+
+                pageMessages.forEach(msg => {
+                    const row = document.createElement('tr');
+                    row.className = msg.read_at > 0 ? 'read' : 'unread';
+
+                    // 选择框
+                    let rowHTML = `<td><input type="checkbox" data-id="${msg.id}" /></td>`;
+
+                    // 根据配置动态渲染字段
+                    config.forEach(field => {
+                        let cellValue = getCellValue(msg, field.key);
+                        rowHTML += `<td>${formatCellContent(cellValue, field.key)}</td>`;
+                    });
+
+                    row.innerHTML = rowHTML;
+                    els.messageTableBody.appendChild(row);
+                });
+
+                // 绑定复选框事件
+                els.messageTableBody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.addEventListener('change', (e) => {
+                        const id = e.target.dataset.id;
+                        if (e.target.checked) {
+                            state.selected.add(id);
+                        } else {
+                            state.selected.delete(id);
+                        }
+                        updateSelectionHint();
+                    });
+                });
+            }
+
+            function getCellValue(msg, key) {
+                switch (key) {
+                    case 'created_at':
+                        return new Date(msg.created_at * 1000).toLocaleString();
+                    case 'read_at':
+                        return msg.read_at > 0 ? '已读' : '未读';
+                    case 'kind':
+                        return msg.kind;
+                    case 'data':
+                        return msg.data;
+                    default:
+                        // 首先从data字段中查找
+                        if (msg.data && msg.data[key] !== undefined) {
+                            return msg.data[key];
+                        }
+                        // 然后从消息本身查找
+                        return msg[key] || '-';
+                }
+            }
+
+            function filterAndRender() {
+                const filteredMessages = getFilteredMessages();
+                const totalFiltered = filteredMessages.length;
+
+                render();
+
+                // 更新分页信息
+                const page = Math.floor(state.offset / state.limit) + 1;
+                const totalPages = Math.max(1, Math.ceil(totalFiltered / state.limit));
+                els.pageInfo.textContent = `第 ${page} / ${totalPages} 页`;
+
+                els.prev.disabled = state.offset <= 0;
+                els.next.disabled = state.offset + state.limit >= totalFiltered;
+
+                state.selected.clear();
+                updateSelectionHint();
+            }
+
+            async function load() {
+                const user_id = els.userId.value.trim();
+                if (!user_id) return alert('请填写用户ID');
+
+                const status = els.status.value;
+                const url = `/v1/inbox?user_id=${encodeURIComponent(user_id)}&status=${encodeURIComponent(status)}&offset=0&limit=1000`;
+
+                try {
+                    const resp = await fetch(url);
+                    if (!resp.ok) throw new Error('load inbox failed');
+                    const data = await resp.json();
+
+                    state.allMessages = data.data || [];
+                    state.total = data.total || 0;
+                    state.offset = 0;
+
+                    updateTypeCounts();
+                    els.totalBadge.textContent = `共 ${state.total} 条`;
+
+                    filterAndRender();
+                } catch (e) {
+                    console.error(e);
+                    alert('加载失败：' + e.message);
+                }
+            }
+
+            // 初始加载
+            updateTableTitle();
+            load();
+        })();
+    </script>
+</body>
+
+</html>

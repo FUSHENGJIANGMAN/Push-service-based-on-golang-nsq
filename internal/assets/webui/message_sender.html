@@ -1,0 +1,3529 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>消息发送中心</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        /* 旋转动画 */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        :root {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        body {
+            margin: 0;
+            background: #0b1020;
+            color: #e8ecff;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: #a7b0d5;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 14px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #ffffff;
+            border-bottom: 1px solid #24315f;
+            padding-bottom: 10px;
+        }
+
+        .message-types {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .type-button {
+            background: rgba(36, 49, 95, 0.4);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #e8ecff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .type-button:hover {
+            background: rgba(52, 66, 111, 0.6);
+            border-color: #34426f;
+        }
+
+        .type-button.active {
+            background: linear-gradient(135deg, #4c6ef5, #3b5bdb);
+            border-color: #4c6ef5;
+            color: #ffffff;
+        }
+
+        .channels-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #24315f;
+        }
+
+        .channels-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .channel-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(36, 49, 95, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .channel-checkbox:hover {
+            background: rgba(36, 49, 95, 0.4);
+        }
+
+        .channel-checkbox input {
+            margin: 0;
+        }
+
+        .channel-checkbox label {
+            font-size: 13px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .form-container {
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 14px;
+            padding: 30px;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #24315f;
+        }
+
+        .form-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .form-fields {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .field-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        .field-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #a7b0d5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .field-label .required {
+            color: #ff6b6b;
+            font-size: 12px;
+        }
+
+        .field-description {
+            font-size: 12px;
+            color: #7c8db5;
+            margin-top: 2px;
+        }
+
+        /* 发送状态样式 */
+        .status-section {
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 12px;
+            padding: 15px;
+            overflow-x: auto;
+            min-width: 350px;
+        }
+
+        .status-section h4 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .channel-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px 12px;
+            margin: 5px 8px 5px 0;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            min-width: 200px;
+            max-width: none;
+            width: auto;
+            white-space: nowrap;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        .channel-status.success {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+        }
+
+        .channel-status.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+        }
+
+        .channel-status.pending {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid #fbbf24;
+        }
+
+        /* 响应式状态显示 */
+        @media (max-width: 768px) {
+            #sendingStatusDisplay>div {
+                flex-direction: column !important;
+            }
+
+            .status-section {
+                min-width: auto !important;
+                margin-bottom: 15px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .status-section {
+                min-width: 250px;
+            }
+        }
+
+        .field-input {
+            background: rgba(11, 16, 32, 0.8);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #e8ecff;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: #4c6ef5;
+            box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
+        }
+
+        .field-input::placeholder {
+            color: #6c7b95;
+        }
+
+        textarea.field-input {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .array-field {
+            background: rgba(11, 16, 32, 0.6);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .array-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .array-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .array-item input {
+            flex: 1;
+        }
+
+        .array-remove {
+            background: #e03131;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .array-add {
+            background: #37b24d;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .object-field {
+            background: rgba(11, 16, 32, 0.6);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .object-field textarea {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(11, 16, 32, 0.8);
+            border: 1px solid #24315f;
+            border-radius: 6px;
+            padding: 12px;
+            color: #e8ecff;
+        }
+
+        /* 附件上传样式 */
+        .attachment-field {
+            margin-bottom: 20px;
+        }
+
+        .attachment-upload-area {
+            margin-bottom: 15px;
+        }
+
+        .upload-zone {
+            border: 2px dashed #4c6ef5;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(76, 110, 245, 0.05);
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: #364fc7;
+            background: rgba(76, 110, 245, 0.1);
+        }
+
+        .upload-zone.drag-over {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text p {
+            margin: 5px 0;
+            color: #8899bb;
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            color: #6b7894;
+        }
+
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .attachment-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: rgba(55, 65, 81, 0.3);
+        }
+
+        .attachment-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .file-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #e8ecff;
+            margin-bottom: 4px;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: #8899bb;
+        }
+
+        .attachment-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-download,
+        .btn-remove {
+            background: none;
+            border: 1px solid #4c6ef5;
+            color: #4c6ef5;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-download:hover {
+            background: #4c6ef5;
+            color: white;
+        }
+
+        .btn-remove {
+            border-color: #e03131;
+            color: #e03131;
+        }
+
+        .btn-remove:hover {
+            background: #e03131;
+            color: white;
+        }
+
+        .attachment-progress {
+            padding: 12px;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: rgba(55, 65, 81, 0.3);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #374151;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4c6ef5;
+            transition: width 0.3s ease;
+        }
+
+        .progress-status {
+            font-size: 12px;
+            color: #8899bb;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            padding-top: 20px;
+            border-top: 1px solid #24315f;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4c6ef5, #3b5bdb);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #3b5bdb, #2f4fb3);
+        }
+
+        .btn-secondary {
+            background: rgba(36, 49, 95, 0.6);
+            color: #e8ecff;
+            border: 1px solid #24315f;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(52, 66, 111, 0.8);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #4c6ef5;
+            border: 1px solid #4c6ef5;
+        }
+
+        .btn-outline:hover {
+            background: rgba(76, 110, 245, 0.1);
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .success-message,
+        .error-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: rgba(55, 178, 77, 0.1);
+            border: 1px solid #37b24d;
+            color: #51cf66;
+        }
+
+        .error-message {
+            background: rgba(224, 49, 49, 0.1);
+            border: 1px solid #e03131;
+            color: #ff6b6b;
+        }
+
+        /* 接收者信息区域样式 */
+        .recipients-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(36, 49, 95, 0.3);
+            border-radius: 12px;
+            border: 1px solid #24315f;
+        }
+
+        .recipients-section h3 {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .recipient-group {
+            margin-bottom: 20px;
+        }
+
+        .recipient-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .recipient-channel-label {
+            color: #a7b0d5;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recipient-channel-label .channel-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .channel-icon.web {
+            background: #4c6ef5;
+        }
+
+        .channel-icon.email {
+            background: #f59f00;
+        }
+
+        .channel-icon.sms {
+            background: #51cf66;
+        }
+
+        .channel-icon.voice {
+            background: #ff6b6b;
+        }
+
+        .recipient-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .recipient-input {
+            background: rgba(11, 16, 32, 0.8);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #e8ecff;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .recipient-input:focus {
+            outline: none;
+            border-color: #4c6ef5;
+            box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+        }
+
+        .recipient-input::placeholder {
+            color: #7c8db5;
+        }
+
+        .recipient-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .recipient-tag {
+            background: rgba(76, 110, 245, 0.2);
+            color: #4c6ef5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .recipient-tag.invalid {
+            background: rgba(224, 49, 49, 0.2);
+            color: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+
+        .recipient-tag .remove-tag {
+            cursor: pointer;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .recipient-tag .remove-tag:hover {
+            color: #e03131;
+        }
+
+        /* 添加通道状态指示器 */
+        .channel-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .channel-status.valid {
+            background: #51cf66;
+        }
+
+        .channel-status.invalid {
+            background: #ff6b6b;
+        }
+
+        .channel-status.empty {
+            background: #868e96;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #7c8db5;
+            margin-top: 4px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .sidebar {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .channels-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* JSON编辑器美化 */
+        .json-editor {
+            position: relative;
+        }
+
+        .json-editor .field-input {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .json-preview {
+            background: rgba(11, 16, 32, 0.9);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .json-preview pre {
+            margin: 0;
+            color: #a7b0d5;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success {
+            background: #37b24d;
+        }
+
+        .status-error {
+            background: #e03131;
+        }
+
+        .status-warning {
+            background: #f59f00;
+        }
+
+        .status-info {
+            background: #4c6ef5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>消息发送中心</h1>
+            <p>支持多种消息类型和传输通道的统一发送平台</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>消息类型</h3>
+                <div class="message-types" id="messageTypes">
+                    <!-- 动态加载消息类型 -->
+                </div>
+
+                <div class="channels-section">
+                    <h3>发送通道</h3>
+                    <div class="channels-grid">
+                        <div class="channel-checkbox">
+                            <input type="checkbox" id="channel-web" value="web" checked>
+                            <label for="channel-web">站内信</label>
+                        </div>
+                        <div class="channel-checkbox">
+                            <input type="checkbox" id="channel-email" value="email">
+                            <label for="channel-email">邮件</label>
+                        </div>
+                        <div class="channel-checkbox">
+                            <input type="checkbox" id="channel-sms" value="sms">
+                            <label for="channel-sms">短信</label>
+                        </div>
+                        <div class="channel-checkbox">
+                            <input type="checkbox" id="channel-voice" value="voice">
+                            <label for="channel-voice">语音</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recipients-section" id="recipientsSection">
+                    <h3>接收者信息</h3>
+                    <div class="recipients-content" id="recipientsContent">
+                        <!-- 动态生成不同通道的接收者输入字段 -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <div class="form-header">
+                    <h2 class="form-title" id="formTitle">选择消息类型</h2>
+                    <div class="actions" style="margin: 0; padding: 0; border: none;">
+                        <div class="reset-button-group" style="position: relative; display: inline-block;">
+                            <button class="btn btn-outline" onclick="resetForm()">重置表单</button>
+                            <button class="btn btn-outline" onclick="showResetOptions()" title="重置选项"
+                                style="margin-left: 8px; padding: 10px 12px;">⚙️</button>
+                            <div id="resetOptions"
+                                style="display: none; position: absolute; top: 100%; right: 0; background: #1a1f3a; border: 1px solid #24315f; border-radius: 6px; z-index: 1000; min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                                <button onclick="resetForm(false); hideResetOptions();"
+                                    style="display: block; width: 100%; padding: 10px 15px; background: none; border: none; color: #e8ecff; text-align: left; cursor: pointer; border-bottom: 1px solid #24315f;">仅重置表单</button>
+                                <button onclick="resetForm(true); hideResetOptions();"
+                                    style="display: block; width: 100%; padding: 10px 15px; background: none; border: none; color: #e8ecff; text-align: left; cursor: pointer;">重置表单和状态历史</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="previewMessage()">预览</button>
+                    </div>
+                </div>
+
+                <div id="messageDisplay" style="display: none;">
+                    <!-- 成功/错误消息显示区域 -->
+                </div> <!-- 独立的发送状态显示区域 - 横向布局 -->
+                <div id="sendingStatusDisplay" style="display: none; margin-bottom: 20px; position: relative;">
+                    <!-- 关闭按钮 -->
+                    <button onclick="closeSendingStatus()"
+                        style="position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; z-index: 10;"
+                        title="关闭状态显示">×</button>
+
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <!-- 通用消息发送状态 -->
+                        <div id="generalSendingStatus" class="status-section"
+                            style="display: none; flex: 1; min-width: 300px;">
+                            <h4 style="color: #ffffff; margin-bottom: 10px;">📧 通用消息发送状态</h4>
+                            <div id="generalStatusContent"></div>
+                        </div>
+
+                        <!-- 语音消息发送状态 -->
+                        <div id="voiceSendingStatus" class="status-section"
+                            style="display: none; flex: 1; min-width: 300px;">
+                            <h4 style="color: #40e0d0; margin-bottom: 10px;">🎤 语音消息发送状态</h4>
+                            <div id="voiceStatusContent"></div>
+                        </div>
+
+                        <!-- 短信消息发送状态 -->
+                        <div id="smsSendingStatus" class="status-section"
+                            style="display: none; flex: 1; min-width: 300px;">
+                            <h4 style="color: #ffa500; margin-bottom: 10px;">💬 短信消息发送状态</h4>
+                            <div id="smsStatusContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="formContent">
+                    <div style="text-align: center; padding: 40px; color: #7c8db5;">
+                        <p>请在左侧选择要发送的消息类型</p>
+                    </div>
+                </div>
+
+                <div class="actions" id="formActions" style="display: none;">
+                    <button class="btn btn-secondary" onclick="saveDraft()">保存草稿</button>
+                    <button class="btn btn-primary" onclick="sendMessage()">发送消息</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let messageFormats = {};
+        let currentMessageType = '';
+        let selectedChannels = ['web'];
+
+        // 通道状态跟踪 - 实现独立状态更新和持久化
+        let channelStatusTracker = {
+            channels: {}, // { channelName: { status: 'pending|success|failed', message: '', timestamp: number } }
+            isTracking: false,
+            messageType: '', // 添加消息类型跟踪
+            statusHistory: {}, // 状态历史缓存 { messageType: { channels: {}, isTracking: bool, timestamp: number } }
+
+            // 初始化跟踪
+            startTracking: function (channels, messageType) {
+                this.isTracking = true;
+                this.messageType = messageType || currentMessageType;
+                this.channels = {};
+                channels.forEach(channel => {
+                    this.channels[channel] = {
+                        status: 'pending',
+                        message: '发送中...',
+                        timestamp: Date.now()
+                    };
+                });
+
+                // 缓存当前状态
+                this.saveStatusToHistory();
+            },
+
+            // 保存状态到历史记录
+            saveStatusToHistory: function () {
+                if (this.messageType) {
+                    this.statusHistory[this.messageType] = {
+                        channels: JSON.parse(JSON.stringify(this.channels)), // 深拷贝
+                        isTracking: this.isTracking,
+                        timestamp: Date.now()
+                    };
+                }
+            },
+
+            // 从历史记录恢复状态
+            restoreStatusFromHistory: function (messageType) {
+                const history = this.statusHistory[messageType];
+                if (history && history.channels && Object.keys(history.channels).length > 0) {
+                    // 检查历史状态是否还是有效的（不超过30分钟）
+                    const isRecentHistory = (Date.now() - history.timestamp) < 30 * 60 * 1000;
+
+                    if (isRecentHistory) {
+                        this.channels = JSON.parse(JSON.stringify(history.channels)); // 深拷贝
+                        this.isTracking = history.isTracking;
+                        this.messageType = messageType;
+
+                        // 显示恢复的状态
+                        this.showRestoredStatus();
+                        return true;
+                    } else {
+                        // 清除过期的历史记录
+                        delete this.statusHistory[messageType];
+                    }
+                }
+                return false;
+            },
+
+            // 显示恢复的状态
+            showRestoredStatus: function () {
+                if (!this.isCurrentMessageType() || Object.keys(this.channels).length === 0) {
+                    return;
+                }
+
+                // 显示状态容器
+                const container = document.getElementById('sendingStatusDisplay');
+                if (container) {
+                    container.style.display = 'block';
+                }
+
+                // 按分类显示状态
+                const categories = ['general', 'voice', 'sms'];
+                categories.forEach(category => {
+                    const categoryChannels = Object.keys(this.channels).filter(channel =>
+                        getChannelCategory(channel) === category
+                    );
+
+                    if (categoryChannels.length > 0) {
+                        const statusSection = document.getElementById(`${category}SendingStatus`);
+                        if (statusSection) {
+                            statusSection.style.display = 'block';
+                        }
+                        this.renderCategoryStatus(category);
+                    }
+                });
+            },
+
+            // 检查是否是当前消息类型
+            isCurrentMessageType: function () {
+                return this.messageType === currentMessageType;
+            },
+
+            // 更新单个通道状态
+            updateChannel: function (channel, status, message = '', error = '') {
+                if (this.channels[channel] && this.isCurrentMessageType()) {
+                    this.channels[channel] = {
+                        status: status,
+                        message: message || (status === 'success' ? '发送成功' : status === 'failed' ? '发送失败' : '发送中...'),
+                        error: error,
+                        timestamp: Date.now()
+                    };
+
+                    // 立即更新UI显示
+                    this.updateChannelUI(channel);
+
+                    // 保存状态到历史记录
+                    this.saveStatusToHistory();
+                }
+            },
+
+            // 更新特定通道的UI
+            updateChannelUI: function (channel) {
+                if (!this.isCurrentMessageType()) {
+                    return; // 不是当前消息类型，不更新UI
+                }
+
+                const category = getChannelCategory(channel);
+                const statusContent = document.getElementById(`${category}StatusContent`);
+
+                if (statusContent) {
+                    // 重新渲染该分类下所有通道的状态
+                    this.renderCategoryStatus(category);
+                }
+            },
+
+            // 渲染分类状态
+            renderCategoryStatus: function (category) {
+                if (!this.isCurrentMessageType()) {
+                    return; // 不是当前消息类型，不渲染
+                }
+
+                const statusContent = document.getElementById(`${category}StatusContent`);
+                if (!statusContent) return;
+
+                // 获取该分类下的所有通道
+                const categoryChannels = Object.keys(this.channels).filter(channel =>
+                    getChannelCategory(channel) === category
+                );
+
+                if (categoryChannels.length === 0) {
+                    return;
+                }
+
+                let statusHtml = '';
+                let allSuccess = true;
+                let anyFailed = false;
+                let anyPending = false;
+
+                categoryChannels.forEach(channel => {
+                    const channelStatus = this.channels[channel];
+                    const statusClass = channelStatus.status === 'success' ? 'success' :
+                        channelStatus.status === 'failed' ? 'error' : 'pending';
+
+                    const channelIcon = {
+                        'web': '🌐',
+                        'email': '📧',
+                        'sms': '💬',
+                        'voice': '🎤'
+                    }[channel] || '📤';
+
+                    let statusIcon = '';
+                    let statusColor = '';
+
+                    if (channelStatus.status === 'success') {
+                        statusIcon = '✓';
+                        statusColor = '#22c55e';
+                    } else if (channelStatus.status === 'failed') {
+                        statusIcon = '✗';
+                        statusColor = '#ef4444';
+                        anyFailed = true;
+                        allSuccess = false;
+                    } else {
+                        statusIcon = '<div style="width: 12px; height: 12px; border: 2px solid #fbbf24; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block;"></div>';
+                        statusColor = '#fbbf24';
+                        anyPending = true;
+                        allSuccess = false;
+                    }
+
+                    statusHtml += `
+                        <div class="channel-status ${statusClass}" style="display: inline-flex; align-items: center; gap: 8px; margin-right: 15px; margin-bottom: 8px; padding: 6px 12px; border-radius: 6px; min-width: 200px; max-width: none; width: auto; white-space: nowrap; flex-shrink: 0;">
+                            <span style="flex-shrink: 0;">${channelIcon}</span>
+                            <span style="white-space: nowrap; flex-shrink: 0;">${getChannelDisplayName(channel)}</span>
+                            <div style="font-size: 12px; color: ${statusColor}; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">
+                                ${statusIcon}
+                                <span style="white-space: nowrap; flex-shrink: 0;">${channelStatus.message}</span>
+                            </div>
+                            ${channelStatus.error ? `<div style="font-size: 10px; color: #ef4444; margin-left: 8px; white-space: nowrap; flex-shrink: 0;">错误: ${channelStatus.error}</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                // 包装成横向排列的容器
+                const wrappedStatusHtml = `
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: flex-start; width: 100%; overflow-x: auto;">
+                        ${statusHtml}
+                    </div>
+                `;
+
+                // 添加该分类的总体状态
+                const overallStatus = anyFailed ? 'failed' : (anyPending ? 'pending' : 'success');
+                const overallColor = overallStatus === 'success' ? '#22c55e' :
+                    overallStatus === 'failed' ? '#ef4444' : '#fbbf24';
+
+                const successCount = categoryChannels.filter(ch => this.channels[ch].status === 'success').length;
+                const failedCount = categoryChannels.filter(ch => this.channels[ch].status === 'failed').length;
+                const pendingCount = categoryChannels.filter(ch => this.channels[ch].status === 'pending').length;
+
+                const finalStatusHtml = wrappedStatusHtml + `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #24315f; font-size: 11px; color: ${overallColor};">
+                        状态: 成功 ${successCount}, 失败 ${failedCount}, 处理中 ${pendingCount}
+                    </div>
+                `;
+
+                statusContent.innerHTML = finalStatusHtml;
+            },
+
+            // 停止跟踪（保留历史记录）
+            stopTracking: function () {
+                // 在停止跟踪前保存状态到历史记录
+                this.saveStatusToHistory();
+
+                this.isTracking = false;
+                this.messageType = '';
+                this.channels = {};
+            },
+
+            // 清除所有历史记录（仅在需要完全重置时使用）
+            clearHistory: function () {
+                this.statusHistory = {};
+            }
+        };
+
+        // 隐藏之前消息类型的状态显示，并尝试恢复当前类型的状态
+        function hideStatusForPreviousMessageType() {
+            // 如果当前有活跃的状态跟踪且不是当前消息类型，则隐藏状态
+            if (channelStatusTracker.isTracking &&
+                channelStatusTracker.messageType !== currentMessageType) {
+                // 保存当前状态到历史记录
+                channelStatusTracker.saveStatusToHistory();
+                // 隐藏当前显示的状态
+                hideSendingStatus();
+            }
+
+            // 尝试恢复当前消息类型的历史状态
+            if (currentMessageType) {
+                const restored = channelStatusTracker.restoreStatusFromHistory(currentMessageType);
+                if (restored) {
+                    console.log(`已恢复 ${currentMessageType} 的发送状态`);
+                }
+            }
+        }
+
+        // 默认值配置
+        const defaultValues = {
+            'string': '',
+            'int': 1,
+            'uint64': 1,
+            'float64': 0.0,
+            'bool': false,
+            '[]string': [],
+            '[]uint64': [],
+            'object': {}
+        };
+
+        // 字段特定的默认值
+        const fieldDefaults = {
+            'priority': 3,
+            'userIds': [12345, 67890],
+            'sender': 1,
+            'appId': 'demo-app',
+            'content': {
+                'title': '示例通知',
+                'body': '这是一条示例通知内容',
+                'type': 'info'
+            },
+            'receivers': [12345, 67890],
+            'type': 'info',
+            'title': '示例标题',
+            'body': '这是消息正文内容',
+            'severity': 'medium',
+            'message': '这是一条示例消息',
+            'timestamp': new Date().toISOString(),
+            'alertId': 'alert-' + Date.now(),
+            'category': 'system',
+            'maintenanceId': 'maint-' + Date.now(),
+            'description': '系统维护描述',
+            'startTime': new Date().toISOString(),
+            'endTime': new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2小时后
+            'affectedServices': ['api', 'web'],
+            'orderId': 'order-' + Date.now(),
+            'orderNumber': 'ORD' + Date.now(),
+            'status': 'confirmed',
+            'previousStatus': 'pending',
+            'updateTime': new Date().toISOString(),
+            'amount': 99.99,
+            'trackingNumber': 'TN' + Date.now(),
+            'estimatedDelivery': new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3天后
+            'alertType': 'login_attempt',
+            'ipAddress': '192.168.1.100',
+            'location': '北京市',
+            'device': 'Chrome 浏览器',
+            'riskLevel': 'low',
+            'actionRequired': false,
+            'actionUrl': 'https://example.com/security',
+            'productId': 'prod-' + Date.now(),
+            'productName': '示例产品',
+            'version': '1.0.0',
+            'launchDate': new Date().toISOString(),
+            'price': 299.99,
+            'features': ['功能1', '功能2', '功能3'],
+            'targetAudience': ['开发者', '企业用户'],
+            'availableRegions': ['中国', '美国', '欧洲'],
+            'downloadUrl': 'https://example.com/download',
+            'campaignId': 'camp-' + Date.now(),
+            'campaignName': '春季大促销',
+            'campaignType': 'discount',
+            'discountRate': 0.8,
+            'couponCode': 'SPRING2024',
+            'minAmount': 100.0,
+            'maxDiscount': 50.0,
+            'targetProducts': ['产品A', '产品B'],
+            'targetCategories': ['电子产品', '服装'],
+            'bannerUrl': 'https://example.com/banner.jpg',
+            'taskId': 'task-' + Date.now(),
+            'taskTitle': '完成项目报告',
+            'taskDescription': '完成Q4项目总结报告',
+            'dueDate': new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7天后
+            'reminderType': 'deadline_approaching',
+            'assignedTo': '张三',
+            'assignedBy': '李四',
+            'projectName': '示例项目',
+            'urgencyLevel': 'medium',
+            'estimatedHours': 8.0,
+            'completionPercentage': 30,
+            'attachments': ['doc1.pdf', 'doc2.xlsx'],
+            'tags': ['重要', '紧急'],
+            // Alert相关字段的默认值
+            'severity': 'medium',
+            'source': '系统监控',
+            'description': '系统告警通知'
+        };
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            loadMessageFormats();
+            setupChannelListeners();
+        });
+
+        // 加载消息格式
+        async function loadMessageFormats() {
+            try {
+                console.log('Loading message formats...');
+                const response = await fetch('/dynamic-inbox/message-formats');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const result = await response.json();
+                console.log('Raw response:', result);
+
+                // 根据服务端日志，数据结构应该是直接的对象格式
+                // 每个消息类型包含 type 和 fields 属性
+                let formats = result;
+
+                // 如果响应被包装在 data 字段中
+                if (result.data && typeof result.data === 'object') {
+                    formats = result.data;
+                }
+
+                // 验证格式数据
+                if (!formats || typeof formats !== 'object') {
+                    throw new Error('消息格式数据无效');
+                }
+
+                console.log('Processing formats:', Object.keys(formats));
+
+                // 验证并处理每个格式
+                for (const [typeName, format] of Object.entries(formats)) {
+                    console.log(`Processing ${typeName}:`, format);
+
+                    if (!format || typeof format !== 'object') {
+                        console.warn(`消息类型 ${typeName} 的格式数据无效:`, format);
+                        continue;
+                    }
+
+                    // 检查字段名称大小写 - 可能是 Fields（大写）或 fields（小写）
+                    if (format.Fields && !format.fields) {
+                        console.log(`消息类型 ${typeName} 使用大写 Fields，转换为小写 fields`);
+                        format.fields = format.Fields;
+                        delete format.Fields;
+                    }
+
+                    // 确保有 fields 字段
+                    if (!format.fields) {
+                        console.warn(`消息类型 ${typeName} 缺少 fields 字段，设置为空数组`);
+                        format.fields = [];
+                    } else if (!Array.isArray(format.fields)) {
+                        console.warn(`消息类型 ${typeName} 的 fields 不是数组:`, format.fields);
+                        format.fields = [];
+                    }
+
+                    console.log(`消息类型 ${typeName}: 类型=${format.type || format.Type}, 字段数量=${format.fields.length}`);
+
+                    // 调试：打印前几个字段
+                    if (format.fields.length > 0) {
+                        console.log(`${typeName} 的前3个字段:`, format.fields.slice(0, 3).map(f => ({
+                            name: f.name || f.Name,
+                            type: f.type || f.Type,
+                            required: f.required !== undefined ? f.required : f.Required
+                        })));
+                    }
+                }
+
+                messageFormats = formats;
+                console.log('Final processed message formats:', messageFormats);
+                renderMessageTypes();
+
+                // 如果没有加载到任何格式，显示错误
+                if (Object.keys(messageFormats).length === 0) {
+                    showMessage('未找到任何消息格式配置', 'warning');
+                } else {
+                    console.log(`成功加载 ${Object.keys(messageFormats).length} 种消息格式`);
+                }
+            } catch (error) {
+                console.error('Failed to load message formats:', error);
+                showMessage('加载消息格式失败: ' + error.message, 'error');
+
+                // 设置一个空的格式对象以防止后续错误
+                messageFormats = {};
+            }
+        }
+
+        // 渲染消息类型列表
+        function renderMessageTypes() {
+            const container = document.getElementById('messageTypes');
+            container.innerHTML = '';
+
+            if (!messageFormats || typeof messageFormats !== 'object') {
+                container.innerHTML = '<div style="color: #e03131; padding: 10px;">消息格式加载失败</div>';
+                return;
+            }
+
+            const types = Object.keys(messageFormats);
+            if (types.length === 0) {
+                container.innerHTML = '<div style="color: #f59f00; padding: 10px;">暂无可用的消息类型</div>';
+                return;
+            }
+
+            types.forEach(type => {
+                const button = document.createElement('div');
+                button.className = 'type-button';
+                button.textContent = type;
+                button.onclick = () => selectMessageType(type);
+                container.appendChild(button);
+            });
+        }
+
+        // 选择消息类型
+        function selectMessageType(type) {
+            try {
+                console.log('Selecting message type:', type);
+
+                // 验证消息类型
+                if (!messageFormats[type]) {
+                    throw new Error(`消息类型 ${type} 不存在`);
+                }
+
+                const format = messageFormats[type];
+                console.log('Message format for', type, ':', format);
+
+                // 验证格式结构
+                if (!format || typeof format !== 'object') {
+                    throw new Error(`消息类型 ${type} 的格式数据无效`);
+                }
+
+                // 确保有fields字段
+                if (!format.fields) {
+                    console.warn(`消息类型 ${type} 没有字段定义，添加空字段数组`);
+                    format.fields = [];
+                } else if (!Array.isArray(format.fields)) {
+                    console.error(`消息类型 ${type} 的字段定义不是数组格式:`, typeof format.fields, format.fields);
+                    throw new Error(`消息类型 ${type} 的字段定义不是数组格式`);
+                }
+
+                console.log(`消息类型 ${type} 有 ${format.fields.length} 个字段:`, format.fields.map(f => f.name));
+
+                // 更新按钮状态
+                document.querySelectorAll('.type-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // 找到当前点击的按钮并激活
+                const buttons = document.querySelectorAll('.type-button');
+                buttons.forEach(btn => {
+                    if (btn.textContent === type) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                currentMessageType = type;
+                document.getElementById('formTitle').textContent = `发送 ${type} 消息`;
+
+                // 隐藏之前消息类型的状态显示
+                hideStatusForPreviousMessageType();
+
+                // 渲染表单
+                renderMessageForm(format);
+                document.getElementById('formActions').style.display = 'flex';
+
+                // 清除之前的错误消息
+                hideMessage();
+
+                console.log('Successfully selected message type:', type, 'with', format.fields.length, 'fields');
+            } catch (error) {
+                console.error('Error selecting message type:', error);
+                showMessage('选择消息类型失败: ' + error.message, 'error');
+            }
+        }
+
+        // 渲染消息表单
+        function renderMessageForm(format) {
+            const container = document.getElementById('formContent');
+
+            try {
+                console.log('Rendering form with format:', format);
+
+                if (!format || !format.fields) {
+                    throw new Error('消息格式无效：缺少字段定义');
+                }
+
+                if (!Array.isArray(format.fields)) {
+                    console.error('Fields is not an array:', typeof format.fields, format.fields);
+                    throw new Error('消息格式无效：字段定义不是数组');
+                }
+
+                console.log(`Rendering ${format.fields.length} fields for ${currentMessageType}`);
+
+                if (format.fields.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #f59f00;">该消息类型没有可配置的字段</div>';
+                    return;
+                }
+
+                const fieldsContainer = document.createElement('div');
+                fieldsContainer.className = 'form-fields';
+
+                format.fields.forEach((field, index) => {
+                    try {
+                        console.log(`Creating field ${index + 1}/${format.fields.length}:`, field);
+                        const fieldGroup = createFieldGroup(field);
+                        fieldsContainer.appendChild(fieldGroup);
+                    } catch (error) {
+                        console.error(`Error creating field ${field.name || field.Name}:`, error);
+                        // 创建错误字段显示
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'field-group';
+                        errorDiv.innerHTML = `
+                            <div style="color: #e03131; padding: 10px; border: 1px solid #e03131; border-radius: 4px;">
+                                字段 "${field.name || field.Name}" 渲染失败: ${error.message}
+                            </div>
+                        `;
+                        fieldsContainer.appendChild(errorDiv);
+                    }
+                });
+
+                container.innerHTML = '';
+                container.appendChild(fieldsContainer);
+
+                console.log('Successfully rendered form for', currentMessageType, 'with', format.fields.length, 'fields');
+            } catch (error) {
+                console.error('Error rendering message form:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #e03131;">
+                        <p>表单渲染失败: ${error.message}</p>
+                        <button class="btn btn-secondary" onclick="resetForm()">重新选择</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 创建字段组
+        function createFieldGroup(field) {
+            const group = document.createElement('div');
+            group.className = 'field-group';
+
+            // 处理字段属性大小写问题
+            const fieldName = field.name || field.Name;
+            const fieldType = field.type || field.Type;
+            const fieldRequired = field.required !== undefined ? field.required : field.Required;
+            const fieldDescription = field.description || field.Description;
+
+            console.log('Creating field:', fieldName, 'type:', fieldType, 'required:', fieldRequired);
+
+            // 标签
+            const label = document.createElement('div');
+            label.className = 'field-label';
+            label.innerHTML = `
+                ${fieldName}
+                ${fieldRequired ? '<span class="required">*</span>' : ''}
+            `;
+            group.appendChild(label);
+
+            // 描述
+            if (fieldDescription) {
+                const desc = document.createElement('div');
+                desc.className = 'field-description';
+                desc.textContent = fieldDescription;
+                group.appendChild(desc);
+            }
+
+            // 创建标准化的字段对象
+            const normalizedField = {
+                name: fieldName,
+                type: fieldType,
+                required: fieldRequired,
+                description: fieldDescription
+            };
+
+            // 输入字段
+            const input = createInputField(normalizedField);
+            group.appendChild(input);
+
+            return group;
+        }
+
+        // 创建输入字段
+        function createInputField(field) {
+            const fieldName = field.name;
+            let defaultValue = fieldDefaults[fieldName] || defaultValues[field.type] || '';
+
+            switch (field.type) {
+                case 'string':
+                    if (fieldName.toLowerCase().includes('time') || fieldName.toLowerCase().includes('date')) {
+                        const input = document.createElement('input');
+                        input.type = 'datetime-local';
+                        input.className = 'field-input';
+                        input.name = fieldName;
+                        if (defaultValue) {
+                            const date = new Date(defaultValue);
+                            input.value = date.toISOString().slice(0, 16);
+                        }
+                        return input;
+                    } else if (fieldName.toLowerCase().includes('url') || fieldName.toLowerCase().includes('link')) {
+                        const input = document.createElement('input');
+                        input.type = 'url';
+                        input.className = 'field-input';
+                        input.name = fieldName;
+                        input.value = defaultValue;
+                        input.placeholder = '请输入URL地址';
+                        return input;
+                    } else if (['message', 'description', 'body', 'content'].includes(fieldName.toLowerCase())) {
+                        const textarea = document.createElement('textarea');
+                        textarea.className = 'field-input';
+                        textarea.name = fieldName;
+                        textarea.value = defaultValue;
+                        textarea.placeholder = `请输入${field.description || field.name}`;
+                        return textarea;
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'field-input';
+                        input.name = fieldName;
+                        input.value = defaultValue;
+                        input.placeholder = `请输入${field.description || field.name}`;
+                        return input;
+                    }
+
+                case 'int':
+                case 'uint64':
+                    const numInput = document.createElement('input');
+                    numInput.type = 'number';
+                    numInput.className = 'field-input';
+                    numInput.name = fieldName;
+                    numInput.value = defaultValue;
+                    if (field.type === 'uint64') {
+                        numInput.min = '0';
+                    }
+                    return numInput;
+
+                case 'float64':
+                    const floatInput = document.createElement('input');
+                    floatInput.type = 'number';
+                    floatInput.step = '0.01';
+                    floatInput.className = 'field-input';
+                    floatInput.name = fieldName;
+                    floatInput.value = defaultValue;
+                    return floatInput;
+
+                case 'bool':
+                    const checkboxContainer = document.createElement('div');
+                    checkboxContainer.style.display = 'flex';
+                    checkboxContainer.style.alignItems = 'center';
+                    checkboxContainer.style.gap = '8px';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = fieldName;
+                    checkbox.checked = defaultValue;
+
+                    const checkboxLabel = document.createElement('label');
+                    checkboxLabel.textContent = defaultValue ? '是' : '否';
+                    checkboxLabel.style.cursor = 'pointer';
+
+                    checkbox.onchange = function () {
+                        checkboxLabel.textContent = this.checked ? '是' : '否';
+                    };
+
+                    checkboxContainer.appendChild(checkbox);
+                    checkboxContainer.appendChild(checkboxLabel);
+                    return checkboxContainer;
+
+                case '[]string':
+                case '[]uint64':
+                    return createArrayField(field, defaultValue);
+
+                case '[]object':
+                    // 特殊处理附件字段
+                    if (fieldName === 'attachments') {
+                        return createAttachmentField(field, defaultValue);
+                    }
+                    return createObjectArrayField(field, defaultValue);
+
+                case 'object':
+                    return createObjectField(field, defaultValue);
+
+                default:
+                    const defaultInput = document.createElement('input');
+                    defaultInput.type = 'text';
+                    defaultInput.className = 'field-input';
+                    defaultInput.name = fieldName;
+                    defaultInput.value = typeof defaultValue === 'object' ? JSON.stringify(defaultValue) : defaultValue;
+                    return defaultInput;
+            }
+        }
+
+        // 创建数组字段
+        function createArrayField(field, defaultValue) {
+            const container = document.createElement('div');
+            container.className = 'array-field';
+
+            const itemsContainer = document.createElement('div');
+            itemsContainer.className = 'array-items';
+
+            // 添加默认值
+            if (Array.isArray(defaultValue) && defaultValue.length > 0) {
+                defaultValue.forEach(value => {
+                    addArrayItem(itemsContainer, field, value);
+                });
+            } else {
+                // 至少添加一个空项
+                addArrayItem(itemsContainer, field, '');
+            }
+
+            const addButton = document.createElement('button');
+            addButton.type = 'button';
+            addButton.className = 'array-add';
+            addButton.textContent = '+ 添加项';
+            addButton.onclick = () => addArrayItem(itemsContainer, field, '');
+
+            container.appendChild(itemsContainer);
+            container.appendChild(addButton);
+
+            // 添加隐藏的input用于表单提交
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = field.name;
+            container.appendChild(hiddenInput);
+
+            // 更新隐藏字段值的函数
+            const updateHiddenValue = () => {
+                const values = Array.from(itemsContainer.children).map(item => {
+                    const input = item.querySelector('input');
+                    const value = input.value.trim();
+                    if (field.type === '[]uint64') {
+                        return value ? parseInt(value) : null;
+                    }
+                    return value;
+                }).filter(v => v !== null && v !== '');
+                hiddenInput.value = JSON.stringify(values);
+            };
+
+            // 监听变化
+            itemsContainer.addEventListener('input', updateHiddenValue);
+            itemsContainer.addEventListener('DOMNodeRemoved', updateHiddenValue);
+            itemsContainer.addEventListener('DOMNodeInserted', updateHiddenValue);
+
+            // 初始化值
+            setTimeout(updateHiddenValue, 0);
+
+            return container;
+        }
+
+        // 添加数组项
+        function addArrayItem(container, field, value = '') {
+            const item = document.createElement('div');
+            item.className = 'array-item';
+
+            const input = document.createElement('input');
+            input.type = field.type === '[]uint64' ? 'number' : 'text';
+            input.className = 'field-input';
+            input.value = value;
+            input.placeholder = field.type === '[]uint64' ? '请输入数字' : '请输入文本';
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'array-remove';
+            removeButton.textContent = '删除';
+            removeButton.onclick = () => {
+                if (container.children.length > 1) {
+                    container.removeChild(item);
+                } else {
+                    input.value = '';
+                }
+            };
+
+            item.appendChild(input);
+            item.appendChild(removeButton);
+            container.appendChild(item);
+        }
+
+        // 创建对象字段
+        function createObjectField(field, defaultValue) {
+            const container = document.createElement('div');
+            container.className = 'object-field';
+
+            const textarea = document.createElement('textarea');
+            textarea.className = 'field-input';
+            textarea.name = field.name;
+            textarea.placeholder = '请输入JSON格式的对象数据';
+
+            // 设置默认值
+            try {
+                textarea.value = JSON.stringify(defaultValue, null, 2);
+            } catch (e) {
+                textarea.value = '{}';
+            }
+
+            // 添加JSON验证
+            const validateJSON = () => {
+                try {
+                    JSON.parse(textarea.value);
+                    textarea.style.borderColor = '#24315f';
+                    return true;
+                } catch (e) {
+                    textarea.style.borderColor = '#e03131';
+                    return false;
+                }
+            };
+
+            textarea.addEventListener('blur', validateJSON);
+            textarea.addEventListener('input', validateJSON);
+
+            const helpText = document.createElement('div');
+            helpText.className = 'help-text';
+            helpText.textContent = '请输入有效的JSON格式数据，例如：{"key": "value", "number": 123}';
+
+            container.appendChild(textarea);
+            container.appendChild(helpText);
+
+            return container;
+        }
+
+        // 创建对象数组字段
+        function createObjectArrayField(field, defaultValue) {
+            const container = document.createElement('div');
+            container.className = 'object-array-field';
+
+            const textarea = document.createElement('textarea');
+            textarea.className = 'field-input';
+            textarea.name = field.name;
+            textarea.placeholder = '请输入JSON格式的对象数组数据';
+
+            // 设置默认值
+            try {
+                textarea.value = JSON.stringify(defaultValue || [], null, 2);
+            } catch (e) {
+                textarea.value = '[]';
+            }
+
+            // 添加JSON验证
+            const validateJSON = () => {
+                try {
+                    const parsed = JSON.parse(textarea.value);
+                    if (!Array.isArray(parsed)) {
+                        throw new Error('必须是数组格式');
+                    }
+                    textarea.style.borderColor = '#24315f';
+                    return true;
+                } catch (e) {
+                    textarea.style.borderColor = '#e03131';
+                    return false;
+                }
+            };
+
+            textarea.addEventListener('blur', validateJSON);
+            textarea.addEventListener('input', validateJSON);
+
+            const helpText = document.createElement('div');
+            helpText.className = 'help-text';
+            helpText.textContent = '请输入有效的JSON格式数组，例如：[{"key": "value"}, {"key": "value2"}]';
+
+            container.appendChild(textarea);
+            container.appendChild(helpText);
+
+            return container;
+        }
+
+        // 创建附件字段（支持文件上传）
+        function createAttachmentField(field, defaultValue) {
+            const container = document.createElement('div');
+            container.className = 'attachment-field';
+
+            // 创建文件上传区域
+            const uploadArea = document.createElement('div');
+            uploadArea.className = 'attachment-upload-area';
+            uploadArea.innerHTML = `
+                <div class="upload-zone" id="upload-zone-${field.name}">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">
+                        <p>点击选择文件或拖拽文件到此处</p>
+                        <p class="upload-hint">支持多个文件上传，最大单文件10MB</p>
+                    </div>
+                    <input type="file" class="file-input" id="file-input-${field.name}" multiple>
+                </div>
+            `;
+
+            // 文件列表容器
+            const fileList = document.createElement('div');
+            fileList.className = 'attachment-list';
+            fileList.id = `attachment-list-${field.name}`;
+
+            // 隐藏的input用于存储附件数据
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = field.name;
+            hiddenInput.value = JSON.stringify(defaultValue || []);
+
+            container.appendChild(uploadArea);
+            container.appendChild(fileList);
+            container.appendChild(hiddenInput);
+
+            // 设置文件上传事件
+            setupFileUpload(field.name, hiddenInput);
+
+            // 如果有默认值，显示已有附件
+            if (defaultValue && Array.isArray(defaultValue) && defaultValue.length > 0) {
+                displayAttachments(field.name, defaultValue);
+            }
+
+            return container;
+        }
+
+        // 设置文件上传功能
+        function setupFileUpload(fieldName, hiddenInput) {
+            // 使用 setTimeout 确保元素已添加到DOM
+            setTimeout(() => {
+                const uploadZone = document.getElementById(`upload-zone-${fieldName}`);
+                const fileInput = document.getElementById(`file-input-${fieldName}`);
+                const fileList = document.getElementById(`attachment-list-${fieldName}`);
+
+                if (!uploadZone || !fileInput || !fileList) {
+                    console.error(`[ATTACHMENT] 找不到附件上传元素: fieldName=${fieldName}`);
+                    return;
+                }
+
+                // 点击上传区域触发文件选择
+                uploadZone.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                // 文件选择处理
+                fileInput.addEventListener('change', (e) => {
+                    handleFileSelect(e.target.files, fieldName, hiddenInput);
+                });
+
+                // 拖拽上传处理
+                uploadZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.add('drag-over');
+                });
+
+                uploadZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.remove('drag-over');
+                });
+
+                uploadZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.remove('drag-over');
+                    handleFileSelect(e.dataTransfer.files, fieldName, hiddenInput);
+                });
+            }, 100);
+        }
+
+        // 处理文件选择
+        async function handleFileSelect(files, fieldName, hiddenInput) {
+            const maxFileSize = 10 * 1024 * 1024; // 10MB
+            const attachments = JSON.parse(hiddenInput.value || '[]');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+
+                // 验证文件大小
+                if (file.size > maxFileSize) {
+                    showMessage(`文件 "${file.name}" 超过10MB限制`, 'error');
+                    continue;
+                }
+
+                try {
+                    // 显示上传进度
+                    const progressId = `progress-${Date.now()}-${i}`;
+                    addUploadProgress(fieldName, file.name, progressId);
+
+                    // 上传文件
+                    const uploadResult = await uploadFile(file, progressId);
+
+                    // 添加到附件列表
+                    const attachment = {
+                        fileName: file.name,
+                        fileType: file.type || 'application/octet-stream',
+                        filePath: uploadResult.filePath,
+                        fileSize: file.size,
+                        uploadId: uploadResult.uploadId
+                    };
+
+                    attachments.push(attachment);
+
+                    // 移除进度显示，添加附件显示
+                    removeUploadProgress(fieldName, progressId);
+                    addAttachmentItem(fieldName, attachment, attachments.length - 1);
+
+                } catch (error) {
+                    console.error('File upload error:', error);
+                    showMessage(`文件 "${file.name}" 上传失败: ${error.message}`, 'error');
+                    removeUploadProgress(fieldName, progressId);
+                }
+            }
+
+            // 更新隐藏字段
+            hiddenInput.value = JSON.stringify(attachments);
+
+            // 清空文件输入
+            document.getElementById(`file-input-${fieldName}`).value = '';
+        }
+
+        // 添加上传进度显示
+        function addUploadProgress(fieldName, fileName, progressId) {
+            const fileList = document.getElementById(`attachment-list-${fieldName}`);
+            const progressItem = document.createElement('div');
+            progressItem.className = 'attachment-progress';
+            progressItem.id = progressId;
+            progressItem.innerHTML = `
+                <div class="progress-info">
+                    <span class="file-name">${fileName}</span>
+                    <span class="progress-status">上传中...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            `;
+            fileList.appendChild(progressItem);
+        }
+
+        // 更新上传进度
+        function updateUploadProgress(progressId, percentage) {
+            const progressItem = document.getElementById(progressId);
+            if (progressItem) {
+                const progressFill = progressItem.querySelector('.progress-fill');
+                const progressStatus = progressItem.querySelector('.progress-status');
+                progressFill.style.width = `${percentage}%`;
+                progressStatus.textContent = `上传中... ${percentage}%`;
+            }
+        }
+
+        // 移除上传进度显示
+        function removeUploadProgress(fieldName, progressId) {
+            const progressItem = document.getElementById(progressId);
+            if (progressItem) {
+                progressItem.remove();
+            }
+        }
+
+        // 上传文件到服务器
+        async function uploadFile(file, progressId) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const xhr = new XMLHttpRequest();
+
+                // 上传进度监听
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentage = Math.round((e.loaded * 100) / e.total);
+                        updateUploadProgress(progressId, percentage);
+                    }
+                });
+
+                // 完成监听
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.code === 0) {
+                                resolve(response.data);
+                            } else {
+                                reject(new Error(response.message || '上传失败'));
+                            }
+                        } catch (e) {
+                            reject(new Error('响应解析失败'));
+                        }
+                    } else {
+                        reject(new Error(`上传失败: HTTP ${xhr.status}`));
+                    }
+                });
+
+                // 错误监听
+                xhr.addEventListener('error', () => {
+                    reject(new Error('网络错误'));
+                });
+
+                // 发送请求
+                xhr.open('POST', '/v1/upload');
+                xhr.send(formData);
+            });
+        }
+
+        // 显示附件列表
+        function displayAttachments(fieldName, attachments) {
+            // 使用setTimeout确保DOM元素已经创建
+            setTimeout(() => {
+                if (attachments && Array.isArray(attachments)) {
+                    attachments.forEach((attachment, index) => {
+                        addAttachmentItem(fieldName, attachment, index);
+                    });
+                }
+            }, 100);
+        }
+
+        // 添加附件项显示
+        function addAttachmentItem(fieldName, attachment, index) {
+            const fileList = document.getElementById(`attachment-list-${fieldName}`);
+            if (!fileList) {
+                console.error(`[ATTACHMENT] 找不到附件列表元素: attachment-list-${fieldName}`);
+                return;
+            }
+
+            // 验证附件对象
+            if (!attachment || typeof attachment !== 'object') {
+                console.error(`[ATTACHMENT] 无效的附件对象:`, attachment);
+                return;
+            }
+
+            const attachmentItem = document.createElement('div');
+            attachmentItem.className = 'attachment-item';
+
+            // 安全地获取附件属性，提供默认值
+            const fileName = attachment.fileName || attachment.filename || '未知文件';
+            const fileType = attachment.fileType || attachment.filetype || 'application/octet-stream';
+            const fileSize = attachment.fileSize || attachment.size || 0;
+            const filePath = attachment.filePath || attachment.path || '';
+
+            attachmentItem.innerHTML = `
+                <div class="attachment-info">
+                    <div class="file-icon">${getFileIcon(fileType)}</div>
+                    <div class="file-details">
+                        <div class="file-name">${fileName}</div>
+                        <div class="file-meta">
+                            ${formatFileSize(fileSize)} • ${fileType}
+                        </div>
+                    </div>
+                </div>
+                <div class="attachment-actions">
+                    <button type="button" class="btn-download" onclick="downloadAttachment('${filePath}', '${fileName}')" title="下载">
+                        📥
+                    </button>
+                    <button type="button" class="btn-remove" onclick="removeAttachment('${fieldName}', ${index})" title="删除">
+                        🗑️
+                    </button>
+                </div>
+            `;
+            fileList.appendChild(attachmentItem);
+        }
+
+        // 获取文件图标
+        function getFileIcon(fileType) {
+            // 防止fileType为undefined或null
+            if (!fileType || typeof fileType !== 'string') return '📄';
+
+            if (fileType.startsWith('image/')) return '🖼️';
+            if (fileType.startsWith('video/')) return '🎥';
+            if (fileType.startsWith('audio/')) return '🎵';
+            if (fileType.includes('pdf')) return '📄';
+            if (fileType.includes('word')) return '📝';
+            if (fileType.includes('excel') || fileType.includes('spreadsheet')) return '📊';
+            if (fileType.includes('powerpoint') || fileType.includes('presentation')) return '📽️';
+            if (fileType.includes('zip') || fileType.includes('archive')) return '📦';
+            return '📄';
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            // 防止bytes为undefined或null
+            if (bytes === undefined || bytes === null || isNaN(bytes)) return '0 B';
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 下载附件
+        function downloadAttachment(filePath, fileName) {
+            const link = document.createElement('a');
+            link.href = `/v1/download?path=${encodeURIComponent(filePath)}`;
+            link.download = fileName;
+            link.click();
+        }
+
+        // 删除附件
+        function removeAttachment(fieldName, index) {
+            const hiddenInput = document.querySelector(`input[name="${fieldName}"][type="hidden"]`);
+            if (!hiddenInput) {
+                console.error(`[ATTACHMENT] 找不到隐藏输入字段: ${fieldName}`);
+                return;
+            }
+
+            const attachments = JSON.parse(hiddenInput.value || '[]');
+
+            // 删除文件
+            if (attachments[index] && attachments[index].filePath) {
+                deleteFile(attachments[index].filePath);
+            }
+
+            // 从数组中移除
+            attachments.splice(index, 1);
+            hiddenInput.value = JSON.stringify(attachments);
+
+            // 重新渲染附件列表
+            const fileList = document.getElementById(`attachment-list-${fieldName}`);
+            if (fileList) {
+                fileList.innerHTML = '';
+                displayAttachments(fieldName, attachments);
+            } else {
+                console.error(`[ATTACHMENT] 找不到附件列表元素: attachment-list-${fieldName}`);
+            }
+        }
+
+        // 删除服务器上的文件
+        async function deleteFile(filePath) {
+            try {
+                const response = await fetch('/v1/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filePath: filePath })
+                });
+
+                if (!response.ok) {
+                    console.error('删除文件失败:', response.statusText);
+                }
+            } catch (error) {
+                console.error('删除文件错误:', error);
+            }
+        }
+
+        // 设置通道监听器
+        function setupChannelListeners() {
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                if (checkbox.value) {
+                    checkbox.addEventListener('change', function () {
+                        updateSelectedChannels();
+                        updateRecipientsSection();
+                    });
+                }
+            });
+            // 初始化接收者区域
+            updateRecipientsSection();
+        }
+
+        // 更新选中的通道
+        function updateSelectedChannels() {
+            selectedChannels = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => cb.value)
+                .filter(val => val);
+        }
+
+        // 更新接收者信息区域
+        function updateRecipientsSection() {
+            const container = document.getElementById('recipientsSection');
+            if (!container) return;
+
+            container.innerHTML = '<h3>接收者配置</h3>';
+
+            if (selectedChannels.length === 0) {
+                container.innerHTML += '<div style="color: #7c8db5; text-align: center; padding: 20px;">请先选择发送通道</div>';
+                return;
+            }
+
+            selectedChannels.forEach(channel => {
+                const group = createRecipientGroup(channel);
+                container.appendChild(group);
+            });
+        }
+
+        // 创建接收者输入组
+        function createRecipientGroup(channel) {
+            const group = document.createElement('div');
+            group.className = 'recipient-group';
+
+            const channelConfig = {
+                web: {
+                    label: '站内信接收者',
+                    placeholder: '请输入用户ID，多个用逗号分隔，如：12345,67890',
+                    type: 'userIds',
+                    icon: 'web',
+                    description: '请输入数字形式的用户ID',
+                    validate: (value) => {
+                        const num = parseInt(value);
+                        return !isNaN(num) && num > 0;
+                    }
+                },
+                email: {
+                    label: '邮件接收者',
+                    placeholder: '请输入邮箱地址，多个用逗号分隔，如：user1@example.com,user2@example.com',
+                    type: 'emails',
+                    icon: 'email',
+                    description: '请输入有效的邮箱地址',
+                    validate: (value) => {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        return emailRegex.test(value);
+                    }
+                },
+                sms: {
+                    label: '短信接收者',
+                    placeholder: '请输入手机号码，多个用逗号分隔，如：13800138000,13900139000',
+                    type: 'phones',
+                    icon: 'sms',
+                    description: '请输入有效的手机号码',
+                    validate: (value) => {
+                        const phoneRegex = /^1[3-9]\d{9}$/;
+                        return phoneRegex.test(value);
+                    }
+                },
+                voice: {
+                    label: '语音接收者',
+                    placeholder: '请输入电话号码，多个用逗号分隔，如：13800138000,13900139000',
+                    type: 'phones',
+                    icon: 'voice',
+                    description: '请输入有效的电话号码',
+                    validate: (value) => {
+                        const phoneRegex = /^1[3-9]\d{9}$/;
+                        return phoneRegex.test(value);
+                    }
+                }
+            };
+
+            const config = channelConfig[channel];
+            if (!config) return group;
+
+            // 标签
+            const label = document.createElement('div');
+            label.className = 'recipient-channel-label';
+            label.innerHTML = `
+                <span class="channel-icon ${config.icon}"></span>
+                ${config.label}
+            `;
+            group.appendChild(label);
+
+            // 描述
+            if (config.description) {
+                const desc = document.createElement('div');
+                desc.className = 'field-description';
+                desc.style.marginBottom = '8px';
+                desc.textContent = config.description;
+                group.appendChild(desc);
+            }
+
+            // 输入区域
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'recipient-input-group';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'recipient-input';
+            input.placeholder = config.placeholder;
+            input.dataset.channel = channel;
+            input.dataset.type = config.type;
+
+            // 设置默认值
+            if (channel === 'web') {
+                input.value = '12345,67890';
+            } else if (channel === 'email') {
+                input.value = 'Lzp15703905620@163.com';
+            } else if (channel === 'sms' || channel === 'voice') {
+                input.value = '19334199436';
+            }
+
+            // 标签容器
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'recipient-tags';
+
+            // 处理输入
+            input.addEventListener('input', function () {
+                updateRecipientTags(this, tagsContainer, config);
+            });
+
+            // 处理Enter键添加标签
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const currentValue = this.value.trim();
+                    if (currentValue && !currentValue.endsWith(',')) {
+                        this.value = currentValue + ',';
+                        updateRecipientTags(this, tagsContainer, config);
+                    }
+                }
+            });
+
+            // 初始化标签
+            updateRecipientTags(input, tagsContainer, config);
+
+            inputGroup.appendChild(input);
+            inputGroup.appendChild(tagsContainer);
+            group.appendChild(inputGroup);
+
+            // 邮件通道显示附件上传区域（可选项）
+            if (channel === 'email') {
+                // 创建附件字段，字段名为 emailAttachments
+                const attachmentField = createAttachmentField({ name: 'emailAttachments' }, []);
+                // 添加标题
+                const attachTitle = document.createElement('div');
+                attachTitle.className = 'field-description';
+                attachTitle.style.margin = '8px 0 4px 0';
+                attachTitle.textContent = '邮件附件（可选）';
+                group.appendChild(attachTitle);
+                group.appendChild(attachmentField);
+            }
+
+            return group;
+        }
+
+        // 更新接收者标签
+        function updateRecipientTags(input, container, config) {
+            const values = input.value.split(',').map(v => v.trim()).filter(v => v);
+            container.innerHTML = '';
+
+            values.forEach((value, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'recipient-tag';
+
+                // 验证值的有效性
+                const isValid = config && config.validate ? config.validate(value) : true;
+                if (!isValid) {
+                    tag.classList.add('invalid');
+                    tag.style.backgroundColor = 'rgba(224, 49, 49, 0.2)';
+                    tag.style.color = '#ff6b6b';
+                    tag.style.borderColor = '#ff6b6b';
+                }
+
+                tag.innerHTML = `
+                    ${value}${!isValid ? ' ⚠️' : ''}
+                    <span class="remove-tag" onclick="removeRecipientTag('${input.dataset.channel}', ${index})">&times;</span>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        // 移除接收者标签
+        function removeRecipientTag(channel, index) {
+            const input = document.querySelector(`input[data-channel="${channel}"]`);
+            if (!input) return;
+
+            const values = input.value.split(',').map(v => v.trim()).filter(v => v);
+            values.splice(index, 1);
+            input.value = values.join(', ');
+
+            const tagsContainer = input.parentElement.querySelector('.recipient-tags');
+            const channelConfigs = {
+                web: {
+                    validate: (value) => !isNaN(parseInt(value)) && parseInt(value) > 0
+                },
+                email: {
+                    validate: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+                },
+                sms: {
+                    validate: (value) => /^1[3-9]\d{9}$/.test(value)
+                },
+                voice: {
+                    validate: (value) => /^1[3-9]\d{9}$/.test(value)
+                }
+            };
+            updateRecipientTags(input, tagsContainer, channelConfigs[channel]);
+        }        // 收集表单数据
+        function collectFormData() {
+            if (!currentMessageType) {
+                throw new Error('请选择消息类型');
+            }
+
+            if (!messageFormats[currentMessageType]) {
+                throw new Error('消息格式无效或字段为空');
+            }
+
+            updateSelectedChannels();
+            if (selectedChannels.length === 0) {
+                throw new Error('请至少选择一个发送通道');
+            }
+
+            const formData = {};
+            const format = messageFormats[currentMessageType];
+
+            if (!format.fields || format.fields.length === 0) {
+                throw new Error('消息格式无效或字段为空');
+            }
+
+            format.fields.forEach(field => {
+                // 处理字段属性大小写问题
+                const fieldName = field.name || field.Name;
+                const fieldType = field.type || field.Type;
+                const fieldRequired = field.required !== undefined ? field.required : field.Required;
+
+                if (fieldType === '[]string' || fieldType === '[]uint64') {
+                    // 数组字段从隐藏input获取
+                    const hiddenInput = document.querySelector(`input[name="${fieldName}"][type="hidden"]`);
+                    if (hiddenInput && hiddenInput.value) {
+                        try {
+                            formData[fieldName] = JSON.parse(hiddenInput.value);
+                        } catch (e) {
+                            formData[fieldName] = fieldDefaults[fieldName] || [];
+                        }
+                    } else {
+                        formData[fieldName] = fieldDefaults[fieldName] || [];
+                    }
+                } else if (fieldType === '[]object') {
+                    // 对象数组字段（包括附件）
+                    const hiddenInput = document.querySelector(`input[name="${fieldName}"][type="hidden"]`);
+                    if (hiddenInput && hiddenInput.value) {
+                        try {
+                            formData[fieldName] = JSON.parse(hiddenInput.value);
+                        } catch (e) {
+                            formData[fieldName] = fieldDefaults[fieldName] || [];
+                        }
+                    } else {
+                        // 尝试从textarea获取（对于普通对象数组字段）
+                        const textarea = document.querySelector(`textarea[name="${fieldName}"]`);
+                        if (textarea && textarea.value.trim()) {
+                            try {
+                                formData[fieldName] = JSON.parse(textarea.value);
+                            } catch (e) {
+                                throw new Error(`${fieldName} 字段的JSON格式不正确`);
+                            }
+                        } else {
+                            formData[fieldName] = fieldDefaults[fieldName] || [];
+                        }
+                    }
+                } else if (fieldType === 'object') {
+                    // 对象字段
+                    const textarea = document.querySelector(`textarea[name="${fieldName}"]`);
+                    if (textarea && textarea.value.trim()) {
+                        try {
+                            formData[fieldName] = JSON.parse(textarea.value);
+                        } catch (e) {
+                            throw new Error(`${fieldName} 字段的JSON格式不正确`);
+                        }
+                    } else {
+                        formData[fieldName] = fieldDefaults[fieldName] || {};
+                    }
+                } else if (fieldType === 'bool') {
+                    // 布尔字段
+                    const checkbox = document.querySelector(`input[name="${fieldName}"][type="checkbox"]`);
+                    formData[fieldName] = checkbox ? checkbox.checked : (fieldDefaults[fieldName] || false);
+                } else if (fieldType === 'int' || fieldType === 'uint64') {
+                    // 数字字段
+                    const input = document.querySelector(`input[name="${fieldName}"]`);
+                    if (input && input.value !== '') {
+                        formData[fieldName] = parseInt(input.value);
+                    } else if (field.required) {
+                        throw new Error(`${fieldName} 是必填字段`);
+                    } else {
+                        formData[fieldName] = fieldDefaults[fieldName] || (fieldType === 'uint64' ? 1 : 1);
+                    }
+                } else if (fieldType === 'float64') {
+                    // 浮点数字段
+                    const input = document.querySelector(`input[name="${fieldName}"]`);
+                    if (input && input.value !== '') {
+                        formData[fieldName] = parseFloat(input.value);
+                    } else if (fieldRequired) {
+                        throw new Error(`${fieldName} 是必填字段`);
+                    } else {
+                        formData[fieldName] = fieldDefaults[fieldName] || 0.0;
+                    }
+                } else {
+                    // 字符串字段
+                    const input = document.querySelector(`input[name="${fieldName}"], textarea[name="${fieldName}"]`);
+                    if (input) {
+                        if (input.type === 'datetime-local' && input.value) {
+                            formData[fieldName] = new Date(input.value).toISOString();
+                        } else {
+                            formData[fieldName] = input.value || fieldDefaults[fieldName] || '';
+                        }
+
+                        if (fieldRequired && !formData[fieldName]) {
+                            throw new Error(`${fieldName} 是必填字段`);
+                        }
+                    } else {
+                        // 如果找不到输入字段，使用默认值
+                        formData[fieldName] = fieldDefaults[fieldName] || '';
+                        if (fieldRequired && !formData[fieldName]) {
+                            throw new Error(`${fieldName} 是必填字段`);
+                        }
+                    }
+                }
+            });
+
+            // 收集接收者信息并添加到formData中
+            const recipients = collectRecipients();
+
+            // 根据选择的通道设置接收者信息到formData中
+            if (recipients.userIds && recipients.userIds.length > 0) {
+                formData.userIds = recipients.userIds;
+            }
+            if (recipients.emails && recipients.emails.length > 0) {
+                formData.emails = recipients.emails;
+            }
+            if (recipients.phones && recipients.phones.length > 0) {
+                formData.phones = recipients.phones;
+            }
+
+            // 邮件通道附件（可选项）
+            if (selectedChannels.includes('email')) {
+                const emailAttachInput = document.querySelector('input[name="emailAttachments"][type="hidden"]');
+                if (emailAttachInput && emailAttachInput.value) {
+                    try {
+                        const attachments = JSON.parse(emailAttachInput.value);
+                        if (Array.isArray(attachments) && attachments.length > 0) {
+                            formData.attachments = attachments; // 关键：赋值到 attachments 字段
+                        }
+                    } catch (e) {
+                        // 附件解析失败，忽略
+                    }
+                }
+            }
+
+            // 验证每个通道都有对应的接收者
+            const channelValidation = validateChannelRecipients(selectedChannels, recipients);
+            if (!channelValidation.valid) {
+                throw new Error(channelValidation.message);
+            }
+
+            return {
+                type: currentMessageType,
+                data: formData,
+                channels: selectedChannels,
+                recipients: recipients
+            };
+        }
+
+        // 收集接收者信息
+        function collectRecipients() {
+            const recipients = {
+                userIds: [],
+                emails: [],
+                phones: []
+            };
+
+            selectedChannels.forEach(channel => {
+                const input = document.querySelector(`input[data-channel="${channel}"]`);
+                if (!input || !input.value.trim()) return;
+
+                const values = input.value.split(',').map(v => v.trim()).filter(v => v);
+
+                switch (channel) {
+                    case 'web':
+                        // 站内信使用用户ID（数字）
+                        recipients.userIds.push(...values.map(v => parseInt(v)).filter(v => !isNaN(v)));
+                        break;
+                    case 'email':
+                        // 邮件使用邮箱地址
+                        recipients.emails.push(...values.filter(v => v.includes('@')));
+                        break;
+                    case 'sms':
+                    case 'voice':
+                        // 短信和语音使用电话号码
+                        recipients.phones.push(...values.filter(v => /^\d+$/.test(v)));
+                        break;
+                }
+            });
+
+            // 去重
+            recipients.userIds = [...new Set(recipients.userIds)];
+            recipients.emails = [...new Set(recipients.emails)];
+            recipients.phones = [...new Set(recipients.phones)];
+
+            return recipients;
+        }
+
+        // 验证通道和接收者匹配
+        function validateChannelRecipients(channels, recipients) {
+            const errors = [];
+
+            for (const channel of channels) {
+                switch (channel) {
+                    case 'web':
+                        if (!recipients.userIds || recipients.userIds.length === 0) {
+                            errors.push('站内信通道需要至少一个用户ID');
+                        }
+                        break;
+                    case 'email':
+                        if (!recipients.emails || recipients.emails.length === 0) {
+                            errors.push('邮件通道需要至少一个邮箱地址');
+                        }
+                        break;
+                    case 'sms':
+                        if (!recipients.phones || recipients.phones.length === 0) {
+                            errors.push('短信通道需要至少一个手机号码');
+                        }
+                        break;
+                    case 'voice':
+                        if (!recipients.phones || recipients.phones.length === 0) {
+                            errors.push('语音通道需要至少一个电话号码');
+                        }
+                        break;
+                }
+            }
+
+            return {
+                valid: errors.length === 0,
+                message: errors.length > 0 ? errors.join('；') : ''
+            };
+        }
+
+        // 预览消息
+        function previewMessage() {
+            try {
+                const messageData = collectFormData();
+
+                // 创建预览窗口
+                const previewWindow = window.open('', '_blank', 'width=800,height=600');
+                previewWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>消息预览</title>
+                        <style>
+                            body { 
+                                font-family: Arial, sans-serif; 
+                                padding: 20px; 
+                                background: #f5f5f5; 
+                            }
+                            .preview-container { 
+                                background: white; 
+                                padding: 20px; 
+                                border-radius: 8px; 
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                            }
+                            .section { 
+                                margin-bottom: 20px; 
+                                padding: 15px; 
+                                border: 1px solid #e0e0e0; 
+                                border-radius: 5px; 
+                            }
+                            .section-title { 
+                                font-weight: bold; 
+                                color: #333; 
+                                margin-bottom: 10px; 
+                            }
+                            pre { 
+                                background: #f8f8f8; 
+                                padding: 10px; 
+                                border-radius: 4px; 
+                                overflow-x: auto; 
+                                font-size: 14px;
+                            }
+                            .channels { 
+                                display: flex; 
+                                gap: 10px; 
+                            }
+                            .channel-tag { 
+                                background: #4c6ef5; 
+                                color: white; 
+                                padding: 4px 8px; 
+                                border-radius: 4px; 
+                                font-size: 12px; 
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="preview-container">
+                            <h2>消息预览</h2>
+                            <div class="section">
+                                <div class="section-title">消息类型</div>
+                                <div>${messageData.type}</div>
+                            </div>
+                            <div class="section">
+                                <div class="section-title">发送通道</div>
+                                <div class="channels">
+                                    ${messageData.channels.map(ch => `<span class="channel-tag">${ch}</span>`).join('')}
+                                </div>
+                            </div>
+                            <div class="section">
+                                <div class="section-title">消息数据</div>
+                                <pre>${JSON.stringify(messageData.data, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `);
+                previewWindow.document.close();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+
+
+        // 通道类型分类
+        const channelCategories = {
+            voice: ['voice'],
+            sms: ['sms'],
+            general: ['web', 'email'] // 通用消息通道
+        };
+
+        // 获取通道的分类
+        function getChannelCategory(channel) {
+            if (channelCategories.voice.includes(channel)) {
+                return 'voice';
+            }
+            if (channelCategories.sms.includes(channel)) {
+                return 'sms';
+            }
+            return 'general';
+        }
+
+        // 按通道分组
+
+
+
+        function groupChannelsByCategory(channels) {
+            const groups = {
+                voice: [],
+                sms: [],
+                general: []
+            };
+
+            channels.forEach(channel => {
+                const category = getChannelCategory(channel);
+                groups[category].push(channel);
+            });
+
+            return groups;
+        }
+
+        // 显示发送状态（使用新的实时状态管理）
+        function showSendingStatus(message, channels, messageType = null) {
+            const container = document.getElementById('sendingStatusDisplay');
+
+            if (!container || !channels || channels.length === 0) {
+                return;
+            }
+
+            // 启动状态跟踪，传递消息类型
+            channelStatusTracker.startTracking(channels, messageType);
+
+            // 显示主容器
+            container.style.display = 'block';
+
+            // 按通道类型分组
+            const channelGroups = groupChannelsByCategory(channels);
+
+            // 为每个有通道的分类显示状态区域
+            Object.keys(channelGroups).forEach(category => {
+                const categoryChannels = channelGroups[category];
+                if (categoryChannels.length > 0) {
+                    const statusSection = document.getElementById(`${category}SendingStatus`);
+
+                    if (statusSection) {
+                        // 显示对应的状态区域
+                        statusSection.style.display = 'block';
+
+                        // 渲染初始状态
+                        channelStatusTracker.renderCategoryStatus(category);
+                    }
+                }
+            });
+
+            // 设置自动关闭定时器
+            setAutoCloseTimer();
+        }
+
+        // 更新单个通道状态（新的实时更新方式）
+        function updateChannelStatus(channel, status, message = '', error = '') {
+            if (channelStatusTracker.isTracking) {
+                channelStatusTracker.updateChannel(channel, status, message, error);
+
+                // 当状态更新时，重新设置自动关闭定时器
+                setAutoCloseTimer();
+            }
+        }
+
+        // 更新发送状态（处理服务器返回的批量结果）
+        function updateSendingStatus(result, messageType = null) {
+            console.log('Updating sending status with result:', result);
+
+            if (!result.channel_results || result.channel_results.length === 0) {
+                console.log('没有具体的通道结果，跳过状态更新');
+                return;
+            }
+
+            // 更新每个通道的状态
+            result.channel_results.forEach(cr => {
+                const message = cr.status === 'success' ? '发送成功' :
+                    cr.status === 'failed' ? '发送失败' :
+                        cr.status === 'pending' ? '处理中...' : '发送完成';
+
+                console.log(`更新通道 ${cr.channel} 状态: ${cr.status} - ${message}`);
+                updateChannelStatus(cr.channel, cr.status, message, cr.error || '');
+            });
+        }
+
+        // 隐藏发送状态（与新的状态管理器兼容）
+        function hideSendingStatus(category = null) {
+            if (category) {
+                // 隐藏特定类型的状态
+                const statusSection = document.getElementById(`${category}SendingStatus`);
+                if (statusSection) {
+                    statusSection.style.display = 'none';
+                }
+            } else {
+                // 隐藏所有状态
+                const allCategories = ['general', 'voice', 'sms'];
+                allCategories.forEach(cat => {
+                    const statusSection = document.getElementById(`${cat}SendingStatus`);
+                    if (statusSection) {
+                        statusSection.style.display = 'none';
+                    }
+                });
+            }
+
+            // 检查是否所有状态都隐藏了，如果是则隐藏主容器
+            const allSections = ['generalSendingStatus', 'voiceSendingStatus', 'smsSendingStatus'];
+            const visibleSections = allSections.filter(id => {
+                const section = document.getElementById(id);
+                return section && section.style.display !== 'none';
+            });
+
+            if (visibleSections.length === 0) {
+                const container = document.getElementById('sendingStatusDisplay');
+                if (container) {
+                    container.style.display = 'none';
+                }
+                // 停止状态跟踪
+                channelStatusTracker.stopTracking();
+            }
+        }
+
+        // 清除发送状态（与新的状态管理器兼容）
+        function clearSendingStatus(category = null) {
+            if (category) {
+                // 清除特定类型的状态
+                const statusContent = document.getElementById(`${category}StatusContent`);
+                if (statusContent) {
+                    statusContent.innerHTML = '';
+                }
+                hideSendingStatus(category);
+            } else {
+                // 清除所有状态
+                const allCategories = ['general', 'voice', 'sms'];
+                allCategories.forEach(cat => {
+                    const statusContent = document.getElementById(`${cat}StatusContent`);
+                    if (statusContent) {
+                        statusContent.innerHTML = '';
+                    }
+                });
+                hideSendingStatus();
+                // 停止状态跟踪
+                channelStatusTracker.stopTracking();
+            }
+        }
+
+
+
+        // 获取发送状态容器（保持兼容性）
+        function getSendingStatusContainer() {
+            return document.getElementById('sendingStatusDisplay');
+        }
+
+        // 自动关闭定时器
+        let autoCloseTimer = null;
+
+        // 手动关闭发送状态显示
+        function closeSendingStatus() {
+            clearSendingStatus();
+
+            // 清除自动关闭定时器
+            if (autoCloseTimer) {
+                clearTimeout(autoCloseTimer);
+                autoCloseTimer = null;
+            }
+        }
+
+        // 设置自动关闭定时器（5秒后自动关闭）
+        function setAutoCloseTimer() {
+            // 清除之前的定时器
+            if (autoCloseTimer) {
+                clearTimeout(autoCloseTimer);
+            }
+
+            autoCloseTimer = setTimeout(() => {
+                const container = document.getElementById('sendingStatusDisplay');
+                if (container && container.style.display !== 'none') {
+                    // 检查是否还有pending状态，如果有则不自动关闭
+                    const hasPendingStatus = channelStatusTracker.isTracking &&
+                        Object.values(channelStatusTracker.channels).some(ch => ch.status === 'pending');
+
+                    if (!hasPendingStatus) {
+                        closeSendingStatus();
+                        console.log('状态显示已自动关闭');
+                    } else {
+                        // 如果还有pending状态，延长5秒再次检查
+                        setAutoCloseTimer();
+                    }
+                }
+            }, 5000); // 5秒后自动关闭
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            try {
+                // 首先进行客户端验证
+                console.log('开始发送消息，当前消息类型:', currentMessageType);
+
+                if (!currentMessageType) {
+                    throw new Error('请先选择消息类型');
+                }
+
+                // 验证必填字段
+                const format = messageFormats[currentMessageType];
+                if (!format || !format.fields) {
+                    throw new Error(`消息类型 ${currentMessageType} 的格式配置无效`);
+                }
+
+                // 检查必填字段
+                const missingFields = [];
+                format.fields.forEach(field => {
+                    const fieldName = field.name || field.Name;
+                    const fieldRequired = field.required !== undefined ? field.required : field.Required;
+
+                    if (fieldRequired) {
+                        const input = document.querySelector(`input[name="${fieldName}"], textarea[name="${fieldName}"]`);
+                        const value = input ? input.value.trim() : '';
+
+                        if (!value) {
+                            missingFields.push(fieldName);
+                        }
+                    }
+                });
+
+                if (missingFields.length > 0) {
+                    throw new Error(`以下必填字段未填写: ${missingFields.join(', ')}`);
+                }
+
+                const messageData = collectFormData();
+
+                // 清除之前的状态并显示发送中状态
+                clearSendingStatus();
+                showSendingStatus('正在发送消息...', messageData.channels, currentMessageType);
+
+                // 构造发送数据 - 根据消息类型选择API端点
+                let sendData, endpoint;
+
+                // 基础消息类型列表（与后端保持一致）
+                const basicTypes = ['Msg', 'Alert', 'Notification', 'SMSMessage', 'VoiceMessage'];
+                const isBasicType = basicTypes.includes(currentMessageType);
+
+                console.log(`消息类型 ${currentMessageType} 是否为基础类型: ${isBasicType}`);
+
+                if (isBasicType) {
+                    // 基础类型使用通用API endpoint
+                    // 为了避免幂等性检查，添加唯一标识符
+                    const msgDataWithTimestamp = { ...messageData.data };
+                    msgDataWithTimestamp._sendTime = new Date().toISOString();
+                    msgDataWithTimestamp._requestId = Math.random().toString(36).substr(2, 9);
+
+                    sendData = {
+                        topic: currentMessageType,
+                        msg: msgDataWithTimestamp,
+                        channels: messageData.channels,
+                        // 添加接收者信息
+                        userIds: messageData.recipients.userIds,
+                        emails: messageData.recipients.emails,
+                        phones: messageData.recipients.phones
+                    };
+                    endpoint = '/v1/push';
+                    console.log('使用通用API端点:', endpoint);
+                } else {
+                    // 自定义类型使用动态消息API - 将通道和接收者信息添加到消息数据中
+                    const msgData = { ...messageData.data };
+                    // 为了避免幂等性检查，添加唯一标识符（使用下划线前缀避免与消息字段冲突）
+                    msgData._sendTime = new Date().toISOString();
+                    msgData._requestId = Math.random().toString(36).substr(2, 9);
+                    msgData.channels = messageData.channels;
+
+                    // 添加接收者信息到消息数据中
+                    if (messageData.recipients.userIds.length > 0) {
+                        msgData.userIds = messageData.recipients.userIds;
+                    }
+                    if (messageData.recipients.emails.length > 0) {
+                        msgData.emails = messageData.recipients.emails;
+                    }
+                    if (messageData.recipients.phones.length > 0) {
+                        msgData.phones = messageData.recipients.phones;
+                    }
+
+                    sendData = msgData;
+                    endpoint = `/v1/push/${currentMessageType}`;
+                    console.log('使用动态API端点:', endpoint);
+                }
+
+                console.log('Sending message data:', sendData);
+                console.log('Using endpoint:', endpoint);
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sendData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Send result:', result);
+
+                    // 首先为所有通道设置初始状态（如果后端没有返回具体的通道结果）
+                    if (!result.channel_results || result.channel_results.length === 0) {
+                        console.log('后端未返回详细通道结果，设置默认状态');
+                        // 为每个通道设置默认状态
+                        messageData.channels.forEach(channel => {
+                            if (channel === 'sms' || channel === 'voice') {
+                                // SMS和语音设置为pending，等待轮询更新
+                                updateChannelStatus(channel, 'pending', '正在处理...', '');
+                            } else {
+                                // web和email直接设置为成功
+                                updateChannelStatus(channel, 'success', '发送成功', '');
+                            }
+                        });
+                    } else {
+                        // 更新发送状态（按通道类型分离）
+                        updateSendingStatus(result, currentMessageType);
+                    }
+
+                    // 根据通道类型显示不同的通知
+                    const channelGroups = groupChannelsByCategory(messageData.channels);
+                    const hasVoice = channelGroups.voice.length > 0;
+                    const hasSMS = channelGroups.sms.length > 0;
+
+                    let messagePrefix = '消息';
+                    if (hasVoice && hasSMS) {
+                        messagePrefix = '🎤语音短信消息';
+                    } else if (hasVoice) {
+                        messagePrefix = '🎤 语音消息';
+                    } else if (hasSMS) {
+                        messagePrefix = '💬 短信消息';
+                    }
+
+                    // 显示详细的发送结果
+                    if (result.channel_messages && result.channel_messages.length > 0) {
+                        // 显示每个通道的发送结果
+                        const channelResults = result.channel_messages.join('<br>');
+                        const overallStatus = result.overall_status;
+
+                        if (overallStatus === 'success') {
+                            showMessage(`${messagePrefix}发送成功！<br>${channelResults}`, 'success');
+                        } else if (overallStatus === 'partial') {
+                            showMessage(`${messagePrefix}部分发送成功：<br>${channelResults}`, 'warning');
+                        } else if (overallStatus === 'failed') {
+                            showMessage(`${messagePrefix}发送失败：<br>${channelResults}`, 'error');
+                        } else {
+                            showMessage(`${messagePrefix}发送中：<br>${channelResults}`, 'info');
+                        }
+
+                        // 如果有语音或短信通道，显示特殊提示
+                        if (hasVoice || hasSMS) {
+                            const actions = [];
+                            if (hasVoice) actions.push('拨打电话');
+                            if (hasSMS) actions.push('发送短信');
+                            const actionText = actions.join('和');
+
+                            if (overallStatus !== 'failed') {
+                                setTimeout(() => {
+                                    showMessage(`${actionText}任务已加入4G模块队列，请等待处理完成`, 'info');
+                                }, 2000);
+                            }
+                        }
+                    } else {
+                        // 回退到简单消息，但也要包含通道信息
+                        const channelNames = messageData.channels.map(c => getChannelDisplayName(c)).join('、');
+                        showMessage(`${messagePrefix}通过${channelNames}发送成功！`, 'success');
+                    }
+
+                    // 无论是否有详细结果，都要启动SMS和语音的状态轮询
+                    if (hasVoice || hasSMS) {
+                        console.log('启动SMS/语音状态轮询');
+                        statusPoller.startPolling(messageData.channels);
+                    }
+
+                    // 发送成功，不自动重置表单，保持状态显示
+                    // 用户可以手动点击重置按钮来清除表单
+                } else {
+                    const error = await response.text();
+                    throw new Error(`发送失败: ${error}`);
+                }
+            } catch (error) {
+                console.error('Send error:', error);
+
+                // 不隐藏状态，而是标记为失败
+                const messageData = collectFormData();
+                messageData.channels.forEach(channel => {
+                    updateChannelStatus(channel, 'failed', '发送失败', error.message);
+                });
+
+                showMessage('发送失败: ' + error.message, 'error');
+            }
+        }
+
+        // 保存草稿
+        function saveDraft() {
+            try {
+                const messageData = collectFormData();
+                localStorage.setItem('message_draft', JSON.stringify(messageData));
+                showMessage('草稿已保存', 'success');
+            } catch (error) {
+                console.error('Save draft error:', error);
+                showMessage('保存草稿失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载草稿
+        function loadDraft() {
+            try {
+                const draft = localStorage.getItem('message_draft');
+                if (draft) {
+                    const messageData = JSON.parse(draft);
+                    // TODO: 实现草稿加载逻辑
+                    showMessage('草稿已加载', 'success');
+                } else {
+                    showMessage('没有找到草稿', 'info');
+                }
+            } catch (error) {
+                console.error('Load draft error:', error);
+                showMessage('加载草稿失败: ' + error.message, 'error');
+            }
+        }
+
+        // 显示消息通知
+        function showMessage(message, type = 'info') {
+            const messageDisplay = document.getElementById('messageDisplay');
+            if (!messageDisplay) return;
+
+            const typeColors = {
+                'success': '#22c55e',
+                'error': '#ef4444',
+                'warning': '#f59f00',
+                'info': '#4c6ef5'
+            };
+
+            const typeIcons = {
+                'success': '✓',
+                'error': '✗',
+                'warning': '⚠',
+                'info': 'ℹ'
+            };
+
+            messageDisplay.innerHTML = `
+                <div style="background: ${typeColors[type] || '#4c6ef5'}; color: white; padding: 12px; border-radius: 6px; margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: bold;">${typeIcons[type] || 'ℹ'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            messageDisplay.style.display = 'block';
+
+            // 自动隐藏通知
+            setTimeout(() => {
+                if (messageDisplay) {
+                    messageDisplay.style.display = 'none';
+                }
+            }, 5000);
+        }
+
+        // 隐藏消息通知
+        function hideMessage() {
+            const messageDisplay = document.getElementById('messageDisplay');
+            if (messageDisplay) {
+                messageDisplay.style.display = 'none';
+                messageDisplay.innerHTML = '';
+            }
+        }
+
+        // 获取通道显示名称
+        function getChannelDisplayName(channel) {
+            const names = {
+                'web': '站内信',
+                'email': '邮件',
+                'sms': '短信',
+                'voice': '语音'
+            };
+            return names[channel] || channel;
+        }
+
+        // 按类别分组通道
+        function groupChannelsByCategory(channels) {
+            const groups = {
+                general: [],
+                voice: [],
+                sms: []
+            };
+
+            channels.forEach(channel => {
+                if (channel === 'voice') {
+                    groups.voice.push(channel);
+                } else if (channel === 'sms') {
+                    groups.sms.push(channel);
+                } else {
+                    groups.general.push(channel);
+                }
+            });
+
+            return groups;
+        }
+
+        // 显示通道进度
+        function showChannelProgress(channelResults) {
+            console.log('Channel progress:', channelResults);
+            // 这里可以添加更详细的进度显示逻辑
+        }
+
+        // 状态轮询管理器
+        class StatusPoller {
+            constructor() {
+                this.polling = false;
+                this.intervalId = null;
+                this.pollInterval = 3000; // 3秒轮询一次
+                this.pendingChannels = new Set();
+            }
+
+            // 开始轮询pending状态
+            startPolling(channels) {
+                if (this.polling) {
+                    console.log('[STATUS_POLLER] 轮询已在进行中');
+                    return;
+                }
+
+                // 只轮询sms和voice通道
+                const slowChannels = channels.filter(ch => ch === 'sms' || ch === 'voice');
+                if (slowChannels.length === 0) {
+                    console.log('[STATUS_POLLER] 没有需要轮询的慢速通道');
+                    return;
+                }
+
+                this.pendingChannels = new Set(slowChannels);
+                this.polling = true;
+                this.pollCount = 0; // 添加轮询计数器
+                this.maxPollCount = 40; // 最大轮询次数 (40 * 3秒 = 2分钟)
+
+                console.log('[STATUS_POLLER] 开始轮询状态:', slowChannels);
+
+                this.intervalId = setInterval(() => {
+                    this.pollCount++;
+                    console.log(`[STATUS_POLLER] 第 ${this.pollCount} 次轮询`);
+
+                    // 如果轮询次数超过最大值，强制完成
+                    if (this.pollCount >= this.maxPollCount) {
+                        console.log('[STATUS_POLLER] 轮询超时，强制完成');
+                        this.forceComplete();
+                        return;
+                    }
+
+                    this.pollPendingStatuses();
+                }, this.pollInterval);
+
+                // 最多轮询2分钟
+                setTimeout(() => {
+                    if (this.polling) {
+                        console.log('[STATUS_POLLER] 轮询超时，停止轮询');
+                        this.forceComplete();
+                    }
+                }, 120000);
+            }
+
+            // 强制完成处理
+            forceComplete() {
+                console.log('[STATUS_POLLER] 强制完成所有pending通道');
+                const channelUpdates = {};
+
+                for (const channel of this.pendingChannels) {
+                    // 设置为成功状态（假设长时间无响应表示处理完成）
+                    updateChannelStatus(channel, 'success', '处理完成', '');
+                    channelUpdates[channel] = 'success';
+                }
+
+                // 显示完成通知
+                if (Object.keys(channelUpdates).length > 0) {
+                    const messages = [];
+                    for (const [channel] of Object.entries(channelUpdates)) {
+                        const channelName = getChannelDisplayName(channel);
+                        messages.push(`${channelName}处理完成`);
+                    }
+                    showMessage(messages.join('，'), 'success');
+                }
+
+                this.stopPolling();
+            }
+
+            // 停止轮询
+            stopPolling() {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                this.polling = false;
+                this.pendingChannels.clear();
+                console.log('[STATUS_POLLER] 停止状态轮询');
+            }            // 轮询待处理状态
+            async pollPendingStatuses() {
+                if (this.pendingChannels.size === 0) {
+                    this.stopPolling();
+                    return;
+                }
+
+                const channels = Array.from(this.pendingChannels).join(',');
+                console.log('[STATUS_POLLER] 轮询通道状态:', channels);
+
+                try {
+                    // 首先尝试轮询消息状态
+                    const response = await fetch(`/v1/status?channels=${channels}`);
+                    console.log('[STATUS_POLLER] 状态查询响应:', response.status);
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('[STATUS_POLLER] 状态查询结果:', result);
+
+                        if (result.code === 0 && result.data) {
+                            // 检查是否有状态数据
+                            if (result.data.statuses && result.data.statuses.length > 0) {
+                                this.processPendingStatuses(result.data.statuses);
+                                return;
+                            } else {
+                                // 如果没有找到状态记录，说明可能消息已经处理完成
+                                // 对于短信和语音，如果没有找到pending状态，可能意味着已经完成
+                                console.log('[STATUS_POLLER] 未找到pending状态，可能已完成处理');
+                                this.handleNoStatusFound();
+                                return;
+                            }
+                        }
+                    } else {
+                        console.error('[STATUS_POLLER] 状态查询失败:', response.status, response.statusText);
+                    }
+                } catch (error) {
+                    console.error('[STATUS_POLLER] 轮询消息状态失败:', error);
+                }
+
+                // 备用方案：轮询4G模块状态
+                try {
+                    const modemResponse = await fetch('/v1/modem/status');
+                    if (modemResponse.ok) {
+                        const modemResult = await modemResponse.json();
+                        console.log('[STATUS_POLLER] 4G模块状态:', modemResult);
+                        if (modemResult.code === 0) {
+                            this.processModemStatus(modemResult.data);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[STATUS_POLLER] 轮询4G模块状态失败:', error);
+                }
+            }
+
+            // 处理没有找到状态记录的情况
+            handleNoStatusFound() {
+                // 对于长时间没有状态更新的情况，假设处理成功
+                // 这通常发生在消息已经被处理但状态记录已被清理的情况
+                const now = Date.now();
+                const channelUpdates = {};
+
+                for (const channel of this.pendingChannels) {
+                    // 假设处理成功（在实际应用中，可能需要更复杂的逻辑）
+                    updateChannelStatus(channel, 'success', '发送完成', '');
+                    channelUpdates[channel] = 'success';
+                }
+
+                // 显示完成通知
+                if (Object.keys(channelUpdates).length > 0) {
+                    const messages = [];
+                    for (const [channel, status] of Object.entries(channelUpdates)) {
+                        const channelName = getChannelDisplayName(channel);
+                        messages.push(`${channelName}发送完成`);
+                    }
+                    showMessage(messages.join('，'), 'success');
+                }
+
+                // 停止轮询
+                this.stopPolling();
+            }
+
+            // 处理待处理状态
+            processPendingStatuses(statuses) {
+                console.log('[STATUS_POLLER] 处理状态更新:', statuses);
+                const channelUpdates = {};
+
+                statuses.forEach(status => {
+                    const channel = status.channel;
+                    console.log(`[STATUS_POLLER] 处理通道 ${channel} 状态: ${status.status}`);
+
+                    // 如果状态不再是pending，更新前端显示
+                    if (status.status !== 'pending') {
+                        const statusText = status.status === 'success' ? '发送成功' :
+                            status.status === 'failed' ? '发送失败' : '处理完成';
+
+                        updateChannelStatus(channel, status.status, statusText, status.error || '');
+
+                        // 从待轮询列表中移除
+                        this.pendingChannels.delete(channel);
+
+                        channelUpdates[channel] = status.status;
+                        console.log(`[STATUS_POLLER] 通道 ${channel} 状态更新为: ${status.status}`);
+                    } else {
+                        // 仍然是pending状态，更新消息但保持在轮询列表中
+                        const pendingMessage = status.message || '处理中...';
+                        updateChannelStatus(channel, 'pending', pendingMessage, '');
+                        console.log(`[STATUS_POLLER] 通道 ${channel} 仍在处理中: ${pendingMessage}`);
+                    }
+                });
+
+                // 显示更新通知
+                if (Object.keys(channelUpdates).length > 0) {
+                    const messages = [];
+                    for (const [channel, status] of Object.entries(channelUpdates)) {
+                        const channelName = getChannelDisplayName(channel);
+                        const statusText = status === 'success' ? '发送成功' :
+                            status === 'failed' ? '发送失败' : '处理完成';
+                        messages.push(`${channelName}${statusText}`);
+                    }
+
+                    const notificationType = Object.values(channelUpdates).every(s => s === 'success') ? 'success' : 'warning';
+                    showMessage(messages.join('，'), notificationType);
+                }
+
+                // 如果所有通道都完成了，停止轮询
+                if (this.pendingChannels.size === 0) {
+                    console.log('[STATUS_POLLER] 所有通道处理完成，停止轮询');
+                    this.stopPolling();
+                }
+            }
+
+            // 处理4G模块状态
+            processModemStatus(modemData) {
+                // 如果4G模块不可用，将所有pending的sms/voice标记为失败
+                if (!modemData.available) {
+                    const channelUpdates = {};
+
+                    if (this.pendingChannels.has('sms')) {
+                        updateChannelStatus('sms', 'failed', '发送失败', '4G模块不可用或初始化失败');
+                        channelUpdates['sms'] = 'failed';
+                        this.pendingChannels.delete('sms');
+                    }
+
+                    if (this.pendingChannels.has('voice')) {
+                        updateChannelStatus('voice', 'failed', '发送失败', '4G模块不可用或初始化失败');
+                        channelUpdates['voice'] = 'failed';
+                        this.pendingChannels.delete('voice');
+                    }
+
+                    // 显示失败通知
+                    if (Object.keys(channelUpdates).length > 0) {
+                        const messages = [];
+                        for (const [channel] of Object.entries(channelUpdates)) {
+                            const channelName = getChannelDisplayName(channel);
+                            messages.push(`${channelName}发送失败`);
+                        }
+                        showMessage(messages.join('，') + '：4G模块不可用', 'error');
+                    }
+
+                    // 如果所有通道都处理完了，停止轮询
+                    if (this.pendingChannels.size === 0) {
+                        this.stopPolling();
+                    }
+                }
+            }
+        }
+
+        // 创建状态轮询实例
+        const statusPoller = new StatusPoller();
+    </script>
+</body>
+
+</html>

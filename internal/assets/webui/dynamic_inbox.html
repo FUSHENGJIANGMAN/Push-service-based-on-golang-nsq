@@ -1,0 +1,1678 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>动态消息收件箱</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        body {
+            margin: 0;
+            background: #0b1020;
+            color: #e8ecff;
+            overflow: hidden;
+            /* 完全禁止页面级别的滚动 */
+            height: 100vh;
+            /* 限制页面高度 */
+        }
+
+        .wrap {
+            width: 100%;
+            margin: 24px 0;
+            padding: 0 16px;
+            box-sizing: border-box;
+            height: calc(100vh - 48px);
+            /* 减去上下margin的高度 */
+            overflow: hidden;
+            /* 确保wrap容器内容不会溢出 */
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100% - 100px);
+            /* 为header和其他元素留出空间 */
+            min-height: 500px;
+        }
+
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 14px;
+            padding: 16px;
+            height: 100%;
+            /* 占满容器高度 */
+            max-height: 100%;
+            overflow-y: auto;
+            /* 只允许垂直滚动 */
+            overflow-x: hidden;
+            /* 禁止水平滚动 */
+        }
+
+        /* 自定义滚动条样式 */
+        .table-wrapper::-webkit-scrollbar,
+        .sidebar::-webkit-scrollbar,
+        .cell-json::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track,
+        .sidebar::-webkit-scrollbar-track,
+        .cell-json::-webkit-scrollbar-track {
+            background: rgba(20, 30, 70, 0.3);
+            border-radius: 4px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb,
+        .sidebar::-webkit-scrollbar-thumb,
+        .cell-json::-webkit-scrollbar-thumb {
+            background: #24315f;
+            border-radius: 4px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover,
+        .sidebar::-webkit-scrollbar-thumb:hover,
+        .cell-json::-webkit-scrollbar-thumb:hover {
+            background: #34426f;
+        }
+
+        .table-wrapper::-webkit-scrollbar-corner {
+            background: rgba(20, 30, 70, 0.3);
+        }
+
+        .sidebar h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #a7b0d5;
+        }
+
+        .type-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .type-item {
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .type-item:hover {
+            background: rgba(30, 40, 80, 0.5);
+            border-color: #24315f;
+        }
+
+        .type-item.active {
+            background: #1a274f;
+            border-color: #263469;
+            color: #a3c5ff;
+        }
+
+        .type-count {
+            font-size: 12px;
+            background: #24315f;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            /* 占满剩余高度 */
+            overflow: hidden;
+            /* 防止内容溢出 */
+        }
+
+        .table-container {
+            background: linear-gradient(180deg, rgba(20, 30, 70, .3), rgba(10, 15, 35, .4));
+            border: 1px solid #24315f;
+            border-radius: 14px;
+            overflow: hidden;
+            /* 隐藏容器溢出，让滚动完全在table-wrapper内 */
+            width: 100%;
+            height: calc(100% - 60px);
+            /* 减去分页器高度(约60px) */
+            /* 固定高度 - 确保表格始终在这个长方形内 */
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            min-height: 350px;
+            /* 最小高度确保表格区域可见 */
+        }
+
+        .table-header {
+            background: #1a274f;
+            padding: 12px 16px;
+            border-bottom: 1px solid #24315f;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            /* 防止头部被压缩 */
+        }
+
+        .table-wrapper {
+            overflow: auto;
+            /* 允许横向和纵向滚动 */
+            flex: 1;
+            /* 占满剩余空间 */
+            position: relative;
+            background: transparent;
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            /* 确保不超出容器 */
+            /* 确保滚动条只在这个区域内显示 */
+            scrollbar-width: thin;
+            /* Firefox */
+            scrollbar-color: #24315f rgba(20, 30, 70, 0.3);
+            /* Firefox */
+        }
+
+        .message-table {
+            width: auto;
+            /* 自动宽度，根据内容调整 */
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            table-layout: auto;
+            /* 改为自动布局，让表格根据内容调整列宽 */
+            min-width: 100%;
+            /* 至少占满容器宽度 */
+            background: transparent;
+            display: table !important;
+        }
+
+        .message-table thead {
+            display: table-header-group !important;
+        }
+
+        .message-table tbody {
+            display: table-row-group !important;
+        }
+
+        .message-table tr {
+            display: table-row !important;
+        }
+
+        .message-table th,
+        .message-table td {
+            display: table-cell !important;
+        }
+
+        .table-title {
+            font-weight: 600;
+            font-size: 16px;
+            flex: 1;
+        }
+
+        .message-table th {
+            background: #141e46;
+            color: #a7b0d5;
+            font-weight: 500;
+            padding: 8px 12px;
+            /* 增加左右内边距给字段名更多空间 */
+            text-align: left;
+            border-bottom: 2px solid #24315f;
+            border-right: 1px solid #24315f;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+            /* 保持不换行，让字段名完整显示 */
+            font-size: 12px;
+            min-width: fit-content;
+            /* 最小宽度适应内容 */
+        }
+
+        .message-table th:first-child {
+            width: 50px;
+            /* 固定选择框列宽 */
+            min-width: 50px;
+            max-width: 50px;
+            padding: 8px 6px;
+            /* 选择框列保持较小的内边距 */
+        }
+
+        .message-table td {
+            padding: 6px 12px;
+            /* 增加左右内边距给内容更多空间 */
+            border-bottom: 1px solid rgba(36, 49, 95, 0.3);
+            border-right: 1px solid rgba(36, 49, 95, 0.2);
+            vertical-align: top;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 12px;
+            min-width: fit-content;
+            /* 最小宽度适应内容 */
+        }
+
+        .message-table td:first-child {
+            width: 50px;
+            /* 固定选择框列宽 */
+            min-width: 50px;
+            max-width: 50px;
+            text-align: center;
+            padding: 6px;
+            /* 选择框列保持较小的内边距 */
+        }
+
+        .message-table tr:hover {
+            background: rgba(30, 40, 80, 0.2);
+        }
+
+        .message-table tr.unread {
+            border-left: 3px solid #4a9eff;
+        }
+
+        .message-table tr.read {
+            opacity: 0.7;
+        }
+
+        .cell-content {
+            word-break: break-word;
+            white-space: nowrap;
+            /* 不换行，超出部分隐藏 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* 显示省略号 */
+            line-height: 1.4;
+            max-width: 200px;
+            /* 设置一个合理的最大宽度，超出时显示省略号 */
+            display: inline-block;
+            /* 确保省略号正确显示 */
+        }
+
+        .cell-content.expanded {
+            white-space: normal;
+            /* 展开时允许换行 */
+            text-overflow: unset;
+        }
+
+        .cell-json {
+            font-family: 'Courier New', monospace;
+            background: rgba(20, 30, 70, 0.5);
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-height: 60px;
+        }
+
+        .cell-expandable {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .cell-expandable::after {
+            content: "...";
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            background: #0b1020;
+            padding-left: 10px;
+        }
+
+        .cell-expandable.expanded::after {
+            display: none;
+        }
+
+        .message-kind {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .kind-msg {
+            background: #1a4b1a;
+            color: #7bd87b;
+        }
+
+        .kind-notification {
+            background: #1a3a4b;
+            color: #7bb8d8;
+        }
+
+        .kind-alert {
+            background: #4b1a1a;
+            color: #d87b7b;
+        }
+
+        .kind-inapp {
+            background: #3a3a1a;
+            color: #d8d87b;
+        }
+
+        .kind-systemmaintenance {
+            background: #4b3a1a;
+            color: #d8b87b;
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        header h1 {
+            font-size: 20px;
+            margin: 0 12px 0 0;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+
+        input,
+        select,
+        button {
+            background: #121a35;
+            color: #e8ecff;
+            border: 1px solid #24315f;
+            padding: 8px 10px;
+            border-radius: 10px;
+        }
+
+        button {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #1a274f;
+            border-color: #263469;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .empty {
+            opacity: .7;
+            padding: 32px 0;
+            text-align: center;
+            grid-column: 1 / -1;
+        }
+
+        .pager {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            background: rgba(20, 30, 70, 0.2);
+            border-radius: 10px;
+            flex-shrink: 0;
+            /* 防止分页器被压缩 */
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #1a274f;
+            border: 1px solid #263469;
+            font-size: 12px;
+            color: #b8c3f5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 32px;
+            opacity: 0.7;
+        }
+
+        .field-config {
+            background: rgba(20, 30, 70, 0.3);
+            border: 1px solid #24315f;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .field-config h4 {
+            margin: 0 0 8px 0;
+            color: #a7b0d5;
+            font-size: 12px;
+        }
+
+        .field-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .field-tag {
+            background: #24315f;
+            color: #b8c3f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 150px;
+            }
+
+            .table-container {
+                height: calc(60vh - 60px);
+                /* 中等屏幕适当减少高度，减去分页器高度 */
+                min-height: 300px;
+            }
+
+            .wrap {
+                height: calc(100vh - 24px);
+                /* 调整wrap高度 */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .wrap {
+                padding: 0 8px;
+                margin: 12px 0;
+                height: calc(100vh - 24px);
+            }
+
+            .main-container {
+                height: calc(100% - 80px);
+                /* 为header留出更多空间 */
+            }
+
+            .table-container {
+                height: calc(50vh - 60px);
+                /* 小屏幕进一步减少高度，减去分页器高度 */
+                min-height: 250px;
+            }
+
+            .message-table {
+                font-size: 11px;
+                /* 移除固定最小宽度限制，让表格自适应 */
+            }
+
+            .message-table th,
+            .message-table td {
+                padding: 4px 3px;
+                font-size: 10px;
+            }
+
+            .message-table th:first-child,
+            .message-table td:first-child {
+                width: 40px;
+                min-width: 40px;
+                max-width: 40px;
+            }
+        }
+
+        /* 表格性能优化 */
+        .message-table {
+            table-layout: auto;
+            /* 改为自动布局确保表格可以根据内容自适应宽度 */
+        }
+
+        /* 粘性表头增强 */
+        .message-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* 滚动性能优化 */
+        .table-wrapper {
+            will-change: scroll-position;
+            transform: translateZ(0);
+            /* 启用硬件加速 */
+        }
+
+        /* 确保表格在固定容器内正常显示 */
+        .table-wrapper {
+            box-sizing: border-box;
+        }
+
+        .message-table th,
+        .message-table td {
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <h1>📨 动态消息收件箱</h1>
+            <div class="controls">
+                <input type="text" id="userId" placeholder="用户ID" value="12345" />
+                <select id="status">
+                    <option value="all">所有</option>
+                    <option value="unread">未读</option>
+                    <option value="read">已读</option>
+                </select>
+                <select id="limit">
+                    <option value="10">10条/页</option>
+                    <option value="20" selected>20条/页</option>
+                    <option value="50">50条/页</option>
+                </select>
+                <button id="btnLoad">加载</button>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <aside class="sidebar">
+                <h3>消息类型</h3>
+                <div class="type-filter" id="typeFilter">
+                    <div class="type-item active" data-type="all">
+                        <span>全部消息</span>
+                        <span class="type-count" id="count-all">0</span>
+                    </div>
+                </div>
+
+                <div id="fieldConfig" style="margin-top: 20px;">
+                    <h3>字段配置</h3>
+                    <div id="currentFieldConfig"></div>
+                </div>
+            </aside>
+
+            <main class="content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title" id="tableTitle">全部消息</div>
+                        <span class="badge" id="totalBadge">共 0 条</span>
+                        <div class="toolbar">
+                            <span id="selectedHint" style="display:none">已选 0 条</span>
+                            <button id="btnMarkRead" disabled>标记已读</button>
+                            <button id="btnDelete" disabled>删除</button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="message-table">
+                            <thead id="messageTableHead">
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="selectAll" /></th>
+                                    <th>创建时间</th>
+                                    <th>状态</th>
+                                    <th>类型</th>
+                                </tr>
+                            </thead>
+                            <tbody id="messageTableBody">
+                            </tbody>
+                        </table>
+                        <div class="loading" id="loading" style="display:none;">加载中...</div>
+                        <div class="empty" id="empty" style="display:none;">暂无消息</div>
+                    </div>
+                </div>
+
+                <div class="pager" style="margin-top: 8px;">
+                    <button id="prev" disabled>上一页</button>
+                    <span id="pageInfo">第 1 / 1 页</span>
+                    <button id="next" disabled>下一页</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const qs = new URLSearchParams(location.search);
+            const els = {
+                userId: document.getElementById('userId'),
+                status: document.getElementById('status'),
+                limit: document.getElementById('limit'),
+                btnLoad: document.getElementById('btnLoad'),
+                btnMarkRead: document.getElementById('btnMarkRead'),
+                btnDelete: document.getElementById('btnDelete'),
+                selectedHint: document.getElementById('selectedHint'),
+                messageTableHead: document.getElementById('messageTableHead'),
+                messageTableBody: document.getElementById('messageTableBody'),
+                empty: document.getElementById('empty'),
+                loading: document.getElementById('loading'),
+                totalBadge: document.getElementById('totalBadge'),
+                prev: document.getElementById('prev'),
+                next: document.getElementById('next'),
+                pageInfo: document.getElementById('pageInfo'),
+                tableTitle: document.getElementById('tableTitle'),
+                typeFilter: document.getElementById('typeFilter'),
+                currentFieldConfig: document.getElementById('currentFieldConfig'),
+                selectAll: document.getElementById('selectAll'),
+            };
+
+            let state = {
+                offset: 0,
+                limit: parseInt(els.limit.value, 10) || 20,
+                total: 0,
+                selected: new Set(),
+                currentType: 'all',
+                allMessages: [],
+                typeCounts: {},
+                messageFormats: {}, // 动态消息格式配置
+                currentFields: [] // 当前类型的字段配置
+            };
+
+            if (qs.get('user_id')) els.userId.value = qs.get('user_id');
+            if (qs.get('status')) els.status.value = qs.get('status');            // 增强的 fetchJson 方法，更好的错误处理和调试
+            async function fetchJson(url, options = {}) {
+                try {
+                    console.log('发起请求:', url, options);
+
+                    // 确保设置Accept头为application/json
+                    const headers = {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        ...(options.headers || {})
+                    };
+
+                    const requestOptions = {
+                        ...options,
+                        headers: headers
+                    };
+
+                    const resp = await fetch(url, requestOptions);
+                    console.log('响应状态:', resp.status, resp.statusText);
+                    console.log('响应头Content-Type:', resp.headers.get('Content-Type'));
+
+                    if (!resp.ok) {
+                        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+                    }
+
+                    const contentType = resp.headers.get('Content-Type') || '';
+                    const text = await resp.text(); // 获取完整响应内容
+                    console.log('响应内容长度:', text.length);
+                    console.log('响应内容预览:', text.substring(0, 200));
+
+                    if (!contentType.includes('application/json')) {
+                        console.error('期望JSON但收到:', contentType);
+                        console.error('完整响应内容:', text);
+                        throw new Error(`服务器返回了非 JSON 数据 (Content-Type: ${contentType})`);
+                    }
+
+                    try {
+                        return JSON.parse(text);
+                    } catch (parseError) {
+                        console.error('JSON解析失败:', parseError);
+                        console.error('尝试解析的内容:', text);
+                        throw new Error(`JSON解析失败: ${parseError.message}`);
+                    }
+                } catch (e) {
+                    console.error('请求失败详情:', e);
+                    console.error('请求URL:', url);
+                    console.error('请求选项:', options);
+
+                    // 区分不同类型的错误
+                    if (e.message.includes('Failed to fetch')) {
+                        alert('网络连接失败，请检查服务器是否运行在 http://localhost:8080');
+                    } else {
+                        alert('请求失败：' + e.message);
+                    }
+                    throw e;
+                }
+            }
+
+            // 加载消息格式配置
+            async function loadMessageFormats() {
+                try {
+                    console.log('开始加载消息格式配置...');
+                    const data = await fetchJson('/dynamic-inbox/message-formats');
+                    console.log('收到消息格式数据:', data);
+                    console.log('消息格式数据详情:', JSON.stringify(data, null, 2));
+
+                    // 处理服务端返回的数据结构
+                    let formats = {};
+                    if (data && data.data) {
+                        formats = data.data;
+                    } else if (data) {
+                        formats = data;
+                    }
+
+                    console.log('处理后的格式数据:', formats);
+                    console.log('格式数据类型:', typeof formats);
+                    console.log('格式数据键:', Object.keys(formats));
+
+                    // 确保格式数据是对象
+                    if (typeof formats === 'object' && formats !== null) {
+                        state.messageFormats = formats;
+                        console.log('设置消息格式状态:', state.messageFormats);
+                        console.log('消息格式状态详情:', JSON.stringify(state.messageFormats, null, 2));
+
+                        updateTypeFilter();
+                        updateFieldsForCurrentType();
+                    } else {
+                        console.warn('收到的格式数据不是有效对象，使用默认配置');
+                        throw new Error('Invalid format data received');
+                    }
+                } catch (e) {
+                    console.error('加载消息格式配置失败:', e);
+                    // 如果加载失败，使用默认配置
+                    state.messageFormats = {
+                        'Alert': {
+                            Type: 'Alert',
+                            Fields: [
+                                { Name: 'subject', Type: 'string', Description: '主题' },
+                                { Name: 'body', Type: 'string', Description: '内容' }
+                            ]
+                        },
+                        'Msg': {
+                            Type: 'Msg',
+                            Fields: [
+                                { Name: 'subject', Type: 'string', Description: '主题' },
+                                { Name: 'body', Type: 'string', Description: '内容' }
+                            ]
+                        },
+                        'Notification': {
+                            Type: 'Notification',
+                            Fields: [
+                                { Name: 'subject', Type: 'string', Description: '主题' },
+                                { Name: 'body', Type: 'string', Description: '内容' }
+                            ]
+                        },
+                        'SystemMaintenance': {
+                            Type: 'SystemMaintenance',
+                            Fields: [
+                                { Name: 'maintenance_type', Type: 'string', Description: '维护类型' },
+                                { Name: 'start_time', Type: 'string', Description: '开始时间' },
+                                { Name: 'end_time', Type: 'string', Description: '结束时间' },
+                                { Name: 'description', Type: 'string', Description: '描述' }
+                            ]
+                        },
+                        'OrderUpdate': {
+                            Type: 'OrderUpdate',
+                            Fields: [
+                                { Name: 'order_id', Type: 'string', Description: '订单ID' },
+                                { Name: 'status', Type: 'string', Description: '状态' },
+                                { Name: 'update_time', Type: 'string', Description: '更新时间' }
+                            ]
+                        },
+                        'AccountSecurity': {
+                            Type: 'AccountSecurity',
+                            Fields: [
+                                { Name: 'security_type', Type: 'string', Description: '安全事件类型' },
+                                { Name: 'location', Type: 'string', Description: '位置' },
+                                { Name: 'ip_address', Type: 'string', Description: 'IP地址' }
+                            ]
+                        }
+                    };
+                    console.log('使用默认消息格式配置:', state.messageFormats);
+                    updateTypeFilter();
+                    updateFieldsForCurrentType();
+                }
+            }
+
+            // 更新类型筛选器
+            function updateTypeFilter() {
+                console.log('更新类型筛选器，消息格式:', state.messageFormats);
+                const typeFilter = els.typeFilter;
+
+                // 清空并重建所有选项
+                typeFilter.innerHTML = '';
+
+                // 创建"全部消息"项
+                const allItem = document.createElement('div');
+                allItem.className = 'type-item active';
+                allItem.dataset.type = 'all';
+                allItem.innerHTML = `
+                    <span>全部消息</span>
+                    <span class="type-count" id="count-all">0</span>
+                `;
+                typeFilter.appendChild(allItem);
+
+                // 收集所有可能的消息类型（从配置和实际消息中）
+                const allTypes = new Set();
+
+                // 从消息格式配置中添加类型
+                if (state.messageFormats && Object.keys(state.messageFormats).length > 0) {
+                    Object.keys(state.messageFormats).forEach(type => {
+                        allTypes.add(type);
+                    });
+                }
+
+                // 从实际消息数据中收集类型
+                if (state.allMessages && state.allMessages.length > 0) {
+                    state.allMessages.forEach(msg => {
+                        if (msg.kind) {
+                            allTypes.add(msg.kind);
+                        }
+                    });
+                }
+
+                // 添加动态消息类型
+                allTypes.forEach(type => {
+                    console.log('添加消息类型:', type);
+                    const item = document.createElement('div');
+                    item.className = 'type-item';
+                    item.dataset.type = type;
+                    item.innerHTML = `
+                        <span>${getTypeDisplayName(type)}</span>
+                        <span class="type-count" id="count-${type.toLowerCase()}">0</span>
+                    `;
+                    typeFilter.appendChild(item);
+                });
+
+                // 确保有一些默认的消息类型显示
+                if (allTypes.size === 0) {
+                    const defaultTypes = ['Alert', 'Msg', 'Notification', 'SystemMaintenance', 'OrderUpdate', 'AccountSecurity'];
+                    defaultTypes.forEach(type => {
+                        const item = document.createElement('div');
+                        item.className = 'type-item';
+                        item.dataset.type = type;
+                        item.innerHTML = `
+                            <span>${getTypeDisplayName(type)}</span>
+                            <span class="type-count" id="count-${type.toLowerCase()}">0</span>
+                        `;
+                        typeFilter.appendChild(item);
+                    });
+                }
+
+                // 初始化计数
+                updateTypeCounts();
+            }
+
+            // 绑定类型筛选事件 - 只绑定一次
+            function bindTypeFilterEvents() {
+                console.log('绑定类型筛选事件');
+
+                // 移除旧的事件监听器（如果存在）
+                const oldHandler = els.typeFilter._clickHandler;
+                if (oldHandler) {
+                    els.typeFilter.removeEventListener('click', oldHandler);
+                }
+
+                // 创建新的事件处理器
+                const clickHandler = (e) => {
+                    const item = e.target.closest('.type-item');
+                    if (!item) return;
+
+                    console.log('点击了类型项:', item.dataset.type);
+
+                    // 移除所有活跃状态
+                    document.querySelectorAll('.type-item').forEach(el => el.classList.remove('active'));
+                    // 设置当前项为活跃
+                    item.classList.add('active');
+
+                    // 更新状态
+                    state.currentType = item.dataset.type;
+                    state.offset = 0;
+
+                    console.log('切换到类型:', state.currentType);
+
+                    // 更新界面
+                    updateTableTitle();
+                    updateFieldsForCurrentType();
+                    filterAndRender();
+                };
+
+                // 绑定新的事件处理器
+                els.typeFilter.addEventListener('click', clickHandler);
+                els.typeFilter._clickHandler = clickHandler; // 保存引用以便后续移除
+            }
+
+            // 获取类型显示名称
+            function getTypeDisplayName(type) {
+                const displayNames = {
+                    'Alert': '⚠️ 警报',
+                    'alert': '⚠️ 警报',
+                    'SystemMaintenance': '🔧 系统维护',
+                    'systemmaintenance': '🔧 系统维护',
+                    'system_maintenance': '🔧 系统维护',
+                    'OrderUpdate': '📦 订单更新',
+                    'orderupdate': '📦 订单更新',
+                    'order_update': '📦 订单更新',
+                    'AccountSecurity': '🔒 账户安全',
+                    'accountsecurity': '🔒 账户安全',
+                    'account_security': '🔒 账户安全',
+                    'Msg': '💬 消息',
+                    'msg': '💬 消息',
+                    'message': '💬 消息',
+                    'Message': '💬 消息',
+                    'Notification': '🔔 通知',
+                    'notification': '🔔 通知',
+                    'InApp': '📱 应用内消息',
+                    'inapp': '📱 应用内消息',
+                    'in_app': '📱 应用内消息',
+                    'unknown': '❓ 未知类型'
+                };
+
+                // 首先查找直接匹配
+                if (displayNames[type]) {
+                    return displayNames[type];
+                }
+
+                // 查找小写匹配
+                const lowerType = type.toLowerCase();
+                if (displayNames[lowerType]) {
+                    return displayNames[lowerType];
+                }
+
+                // 尝试驼峰命名转换
+                const camelCase = type.charAt(0).toUpperCase() + type.slice(1);
+                if (displayNames[camelCase]) {
+                    return displayNames[camelCase];
+                }
+
+                // 尝试下划线转换
+                const snakeCase = type.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+                if (displayNames[snakeCase]) {
+                    return displayNames[snakeCase];
+                }
+
+                // 如果找不到匹配，使用默认格式
+                const emoji = getDefaultEmojiForType(type);
+                const formatted = type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                return `${emoji} ${formatted}`;
+            }
+
+            // 为未知类型获取默认emoji
+            function getDefaultEmojiForType(type) {
+                const lowerType = type.toLowerCase();
+                if (lowerType.includes('alert') || lowerType.includes('warning')) return '⚠️';
+                if (lowerType.includes('security') || lowerType.includes('safe')) return '🔒';
+                if (lowerType.includes('order') || lowerType.includes('purchase')) return '📦';
+                if (lowerType.includes('maintenance') || lowerType.includes('system')) return '🔧';
+                if (lowerType.includes('message') || lowerType.includes('msg')) return '💬';
+                if (lowerType.includes('notification') || lowerType.includes('notify')) return '🔔';
+                if (lowerType.includes('app') || lowerType.includes('mobile')) return '📱';
+                return '📄';
+            }
+            function resolveFormatKey(type) {
+                if (!state.messageFormats) return type;
+                if (state.messageFormats[type]) return type;
+                const lc = String(type || '').toLowerCase();
+                const hit = Object.keys(state.messageFormats).find(k => k.toLowerCase() === lc);
+                return hit || type;
+            }
+
+            // 更新当前类型的字段配置
+            function updateFieldsForCurrentType() {
+                const currentType = resolveFormatKey(state.currentType);
+                console.log('更新字段配置，当前类型:', currentType);
+
+                if (currentType === 'all') {
+                    state.currentFields = [
+                        { name: 'created_at', label: '创建时间', type: 'datetime' },
+                        { name: 'read_at', label: '状态', type: 'status' },
+                        { name: 'kind', label: '类型', type: 'kind' },
+                        { name: 'subject', label: '主题', type: 'string' },
+                        { name: 'body', label: '内容', type: 'string' }
+                    ];
+                } else {
+                    // 获取特定类型的字段配置
+                    const typeConfig = findMessageFormatByType(currentType);
+                    console.log('获取到的类型配置:', typeConfig);
+
+                    if (typeConfig && Array.isArray(typeConfig) && typeConfig.length > 0) {
+                        state.currentFields = [
+                            { name: 'created_at', label: '创建时间', type: 'datetime' },
+                            { name: 'read_at', label: '状态', type: 'status' },
+                            { name: 'kind', label: '类型', type: 'kind' },
+                            ...typeConfig.map(field => ({
+                                name: field.Name || field.name || 'unknown',
+                                label: field.Description || field.description || field.label || field.Label || field.Name || field.name || 'Unknown',
+                                type: field.Type || field.type || 'string'
+                            }))
+                        ];
+                    } else {
+                        console.log('使用通用字段配置，确保所有消息类型都能显示');
+                        // 增强的默认字段配置，确保所有消息类型都能在表格中正常显示
+                        state.currentFields = [
+                            { name: 'created_at', label: '创建时间', type: 'datetime' },
+                            { name: 'read_at', label: '状态', type: 'status' },
+                            { name: 'kind', label: '类型', type: 'kind' },
+                            { name: 'subject', label: '主题', type: 'string' },
+                            { name: 'body', label: '内容', type: 'string' },
+                            { name: 'data', label: '消息数据', type: 'object' }  // 添加data字段来显示动态内容
+                        ];
+                    }
+                }
+
+                console.log('最终字段配置:', state.currentFields);
+                updateTableHeader();
+                updateFieldConfigDisplay();
+            }            // 查找消息格式配置
+            function findMessageFormatByType(type) {
+                console.log('查找消息格式配置，类型:', type, '可用格式:', Object.keys(state.messageFormats));
+
+                // 如果没有格式配置数据，返回null让系统使用默认配置
+                if (!state.messageFormats || Object.keys(state.messageFormats).length === 0) {
+                    console.log('没有消息格式配置数据，使用默认配置');
+                    return null;
+                }
+
+                // 尝试不同的类型名称匹配
+                const possibleKeys = [
+                    type,
+                    type.charAt(0).toUpperCase() + type.slice(1),
+                    type.toLowerCase(),
+                    type.toUpperCase()
+                ];
+
+                for (const key of possibleKeys) {
+                    if (state.messageFormats[key]) {
+                        console.log('找到匹配格式:', key, state.messageFormats[key]);
+
+                        const format = state.messageFormats[key];
+
+                        // 详细调试对象结构
+                        console.log('格式对象类型:', typeof format);
+                        console.log('格式对象详情:', JSON.stringify(format, null, 2));
+
+                        // 情况1：包含Fields数组的对象，支持大小写 {Type: "xxx", Fields: [...]} 或 {type: "xxx", fields: [...]}
+                        const fieldsArray = format.Fields || format.fields;
+                        console.log('查找Fields/fields:', 'Fields存在:', !!format.Fields, 'fields存在:', !!format.fields);
+                        console.log('fieldsArray:', fieldsArray);
+
+                        if (fieldsArray && Array.isArray(fieldsArray) && fieldsArray.length > 0) {
+                            console.log('使用Fields/fields数组:', fieldsArray);
+                            return fieldsArray;
+                        }
+
+                        // 情况2：直接是字段数组 [{name, type, label}, ...]
+                        if (Array.isArray(format) && format.length > 0) {
+                            console.log('使用字段数组:', format);
+                            return format;
+                        }
+
+                        // 情况3：是对象，但可能有其他结构
+                        if (typeof format === 'object' && format !== null) {
+                            // 检查是否是单一消息格式对象，包含字段信息
+                            const keys = Object.keys(format);
+                            console.log('对象属性:', keys);
+
+                            // 检查所有可能的字段属性
+                            const possibleFieldKeys = ['Fields', 'fields', 'Field', 'field'];
+                            for (const fieldKey of possibleFieldKeys) {
+                                if (format[fieldKey] && Array.isArray(format[fieldKey]) && format[fieldKey].length > 0) {
+                                    console.log(`找到字段数组 ${fieldKey}:`, format[fieldKey]);
+                                    return format[fieldKey];
+                                }
+                            }
+
+                            // 如果有Type或type属性，可能是MessageFormat结构
+                            if (format.Type || format.type) {
+                                console.log('找到Type/type但没有可识别的字段数组');
+                                console.log('完整格式对象:', format);
+                                // 不立即返回空数组，继续检查其他可能性
+                            }
+
+                            // 检查是否直接包含字段信息
+                            const hasFieldLikeProperties = keys.some(key =>
+                                ['name', 'type', 'description', 'required'].includes(key.toLowerCase())
+                            );
+                            if (hasFieldLikeProperties) {
+                                console.log('对象本身似乎就是一个字段定义');
+                                return [format];
+                            }
+
+                            // 检查对象的属性是否可以作为字段展示
+                            if (keys.length > 0) {
+                                console.log('将对象属性转换为字段配置');
+                                return keys.map(key => ({
+                                    name: key,
+                                    label: key.charAt(0).toUpperCase() + key.slice(1),
+                                    type: typeof format[key] === 'object' ? 'object' : 'string'
+                                }));
+                            }
+                        }
+
+                        console.log('无法识别的格式结构，返回原始数据:', format);
+                        // 如果无法识别格式，返回null让系统使用默认配置
+                        return null;
+                    }
+                }
+                console.log('未找到匹配的消息格式，使用默认配置');
+                return null;
+            }
+
+            // 更新表头
+            function updateTableHeader() {
+                const thead = els.messageTableHead;
+                thead.innerHTML = '';
+
+                const headerRow = document.createElement('tr');
+
+                // 选择框列
+                const checkboxTh = document.createElement('th');
+                checkboxTh.style.width = '50px';
+                checkboxTh.style.minWidth = '50px';
+                checkboxTh.style.maxWidth = '50px';
+                checkboxTh.innerHTML = '<input type="checkbox" id="selectAllNew" />';
+                headerRow.appendChild(checkboxTh);
+
+                // 动态字段列 - 让每列自适应内容宽度
+                state.currentFields.forEach((field, index) => {
+                    const th = document.createElement('th');
+                    th.textContent = field.label;
+
+                    // 移除固定宽度限制，让表格自适应内容
+                    th.style.minWidth = getMinColumnWidth(field.type); // 设置最小宽度
+                    th.style.whiteSpace = 'nowrap'; // 确保字段名不换行
+
+                    headerRow.appendChild(th);
+                });
+
+                thead.appendChild(headerRow);
+
+                // 重新绑定全选事件
+                const selectAllNew = thead.querySelector('#selectAllNew');
+                if (selectAllNew) {
+                    selectAllNew.addEventListener('change', (e) => {
+                        const checked = e.target.checked;
+                        const checkboxes = els.messageTableBody.querySelectorAll('input[type="checkbox"]');
+                        checkboxes.forEach(cb => {
+                            cb.checked = checked;
+                            const id = cb.dataset.id;
+                            if (checked) {
+                                state.selected.add(id);
+                            } else {
+                                state.selected.delete(id);
+                            }
+                        });
+                        updateSelectionHint();
+                    });
+                }
+            }
+
+            // 获取最小列宽 - 确保字段名和内容都能完整显示
+            function getMinColumnWidth(type) {
+                // 为不同类型的列设置合适的最小宽度
+                const widths = {
+                    'datetime': '160px',    // 日期时间需要更多空间
+                    'status': '80px',       // 状态列适中
+                    'kind': '120px',        // 类型列显示徽章需要空间
+                    'string': '150px',      // 字符串类型默认宽度
+                    'int': '100px',         // 数字类型
+                    'uint64': '120px',      // 长整型
+                    '[]uint64': '150px',    // 数组类型
+                    '[]string': '180px',    // 字符串数组
+                    'object': '200px'       // 对象类型需要更多空间
+                };
+                return widths[type] || '120px'; // 默认最小宽度
+            }
+
+            // 获取列宽 - 保留原函数以防其他地方使用
+            function getColumnWidth(type) {
+                return getMinColumnWidth(type);
+            }
+
+            // 更新字段配置显示
+            function updateFieldConfigDisplay() {
+                const container = els.currentFieldConfig;
+                container.innerHTML = '';
+
+                if (state.currentType === 'all') {
+                    container.innerHTML = '<p style="opacity:0.7;font-size:12px;">显示所有消息类型的通用字段</p>';
+                    return;
+                }
+
+                const config = findMessageFormatByType(resolveFormatKey(state.currentType));
+                console.log('字段配置显示，类型:', state.currentType, '配置:', config);
+
+                if (!config || !Array.isArray(config)) {
+                    container.innerHTML = '<p style="opacity:0.7;font-size:12px;">该类型暂无字段配置</p>';
+                    return;
+                }
+
+                const fieldConfigDiv = document.createElement('div');
+                fieldConfigDiv.className = 'field-config';
+                fieldConfigDiv.innerHTML = `
+                    <h4>${getTypeDisplayName(state.currentType)} 字段</h4>
+                    <div class="field-tags">
+                        ${config.map(field => {
+                    const name = field.Name || field.name || '未知字段';
+                    const type = field.Type || field.type || '未知类型';
+                    const label = field.Description || field.description || field.label || field.Label || name;
+                    return `<span class="field-tag">${label} (${type})</span>`;
+                }).join('')}
+                    </div>
+                `;
+                container.appendChild(fieldConfigDiv);
+            }
+
+            // 更新统计计数
+            function updateTypeCounts() {
+                // 重置计数
+                state.typeCounts = { all: 0 };
+
+                // 收集所有可能的类型
+                const allTypes = new Set();
+
+                // 从消息格式配置中添加类型
+                if (state.messageFormats) {
+                    Object.keys(state.messageFormats).forEach(type => {
+                        allTypes.add(type);
+                        state.typeCounts[type.toLowerCase()] = 0;
+                    });
+                }
+
+                // 从实际消息中收集类型并初始化计数
+                if (state.allMessages) {
+                    state.allMessages.forEach(msg => {
+                        if (msg.kind) {
+                            allTypes.add(msg.kind);
+                            const lowerKind = msg.kind.toLowerCase();
+                            if (state.typeCounts[lowerKind] === undefined) {
+                                state.typeCounts[lowerKind] = 0;
+                            }
+                        }
+                    });
+                }
+
+                // 统计各类型消息数量
+                if (state.allMessages) {
+                    state.allMessages.forEach(msg => {
+                        state.typeCounts.all++;
+                        if (msg.kind) {
+                            const lowerKind = msg.kind.toLowerCase();
+                            state.typeCounts[lowerKind]++;
+                        } else {
+                            // 处理没有kind字段的消息
+                            if (state.typeCounts.unknown === undefined) {
+                                state.typeCounts.unknown = 0;
+                            }
+                            state.typeCounts.unknown++;
+                        }
+                    });
+                }
+
+                // 更新显示
+                Object.keys(state.typeCounts).forEach(type => {
+                    const el = document.getElementById(`count-${type}`);
+                    if (el) el.textContent = state.typeCounts[type];
+                });
+
+                console.log('更新后的类型计数:', state.typeCounts);
+            }
+
+            // 获取过滤后的消息
+            function getFilteredMessages() {
+                if (state.currentType === 'all') {
+                    return state.allMessages || [];
+                }
+
+                console.log('筛选消息，当前类型:', state.currentType, '所有消息数:', (state.allMessages || []).length);
+
+                const filtered = (state.allMessages || []).filter(msg => {
+                    if (!msg.kind) {
+                        // 如果消息没有kind字段，只有在筛选'unknown'类型时才显示
+                        return state.currentType.toLowerCase() === 'unknown';
+                    }
+
+                    const msgKind = msg.kind.toLowerCase();
+                    const targetType = state.currentType.toLowerCase();
+
+                    // 直接匹配
+                    if (msgKind === targetType) return true;
+
+                    // 尝试更灵活的匹配
+                    const possibleMatches = [
+                        targetType,
+                        targetType.charAt(0).toUpperCase() + targetType.slice(1),
+                        targetType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, ''),
+                        // 添加更多匹配模式
+                        targetType.replace(/_/g, ''),
+                        targetType.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()
+                    ];
+
+                    const isMatch = possibleMatches.some(match => {
+                        return msgKind === match.toLowerCase() ||
+                            msg.kind === match ||
+                            msg.kind.toLowerCase() === match.toLowerCase();
+                    });
+
+                    return isMatch;
+                });
+
+                console.log('筛选结果:', filtered.length, '条消息');
+                return filtered;
+            }
+
+            // 格式化单元格内容
+            function formatCellContent(value, field) {
+                if (value === null || value === undefined) {
+                    return '<span style="opacity:0.5">-</span>';
+                }
+
+                const contentId = `content_${Math.random().toString(36).substr(2, 9)}`;
+
+                switch (field.type) {
+                    case 'datetime':
+                        return `<span title="${new Date(value * 1000).toLocaleString()}">${new Date(value * 1000).toLocaleString()}</span>`;
+                    case 'status':
+                        return value > 0 ?
+                            '<span style="color:#7bd87b" title="已读">已读</span>' :
+                            '<span style="color:#d87b7b" title="未读">未读</span>';
+                    case 'kind':
+                        return getKindBadge(value);
+                    case 'object':
+                        const jsonStr = JSON.stringify(value, null, 2);
+                        return `<span title="${jsonStr}" class="cell-content" style="cursor:pointer" onclick="alert('${jsonStr.replace(/'/g, '\\\'').replace(/"/g, '&quot;')}')">${jsonStr.length > 50 ? jsonStr.substring(0, 50) + '...' : jsonStr}</span>`;
+                    case '[]uint64':
+                    case '[]string':
+                        if (Array.isArray(value)) {
+                            const content = `[${value.join(', ')}]`;
+                            return `<span title="${content}" class="cell-content">${content.length > 30 ? content.substring(0, 30) + '...' : content}</span>`;
+                        }
+                        return `<span class="cell-content">${value}</span>`;
+                    default:
+                        const stringValue = String(value);
+                        return `<span title="${stringValue}" class="cell-content">${stringValue.length > 50 ? stringValue.substring(0, 50) + '...' : stringValue}</span>`;
+                }
+            }
+
+            // 获取单元格值
+            function getCellValue(msg, fieldName) {
+                console.log('获取单元格值，字段:', fieldName, '消息:', msg);
+
+                // 处理基础字段
+                switch (fieldName) {
+                    case 'created_at':
+                        return msg.created_at;
+                    case 'read_at':
+                        return msg.read_at;
+                    case 'kind':
+                        return msg.kind;
+                    case 'subject':
+                        return msg.subject;
+                    case 'body':
+                        return msg.body;
+                    case 'data':
+                        // 特殊处理data字段，将其作为对象显示
+                        return msg.data || {};
+                    default:
+                        // 首先从data字段中查找
+                        if (msg.data && typeof msg.data === 'object' && msg.data[fieldName] !== undefined) {
+                            console.log('从data字段找到值:', fieldName, msg.data[fieldName]);
+                            return msg.data[fieldName];
+                        }
+
+                        // 然后从消息本身查找
+                        if (msg[fieldName] !== undefined) {
+                            console.log('从消息本身找到值:', fieldName, msg[fieldName]);
+                            return msg[fieldName];
+                        }
+
+                        // 尝试大小写变换和常见字段名变体
+                        const variations = [
+                            fieldName.toLowerCase(),
+                            fieldName.charAt(0).toUpperCase() + fieldName.slice(1),
+                            fieldName.toUpperCase(),
+                            // 添加常见的字段名变体
+                            fieldName.replace(/([A-Z])/g, '_$1').toLowerCase(),
+                            fieldName.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase())
+                        ];
+
+                        for (const variation of variations) {
+                            if (msg.data && typeof msg.data === 'object' && msg.data[variation] !== undefined) {
+                                console.log('从data字段找到变体值:', variation, msg.data[variation]);
+                                return msg.data[variation];
+                            }
+                            if (msg[variation] !== undefined) {
+                                console.log('从消息本身找到变体值:', variation, msg[variation]);
+                                return msg[variation];
+                            }
+                        }
+
+                        // 如果是对象类型且找不到具体字段，尝试返回整个data对象
+                        if (fieldName === 'data' || fieldName.includes('data')) {
+                            return msg.data || {};
+                        }
+
+                        console.log('未找到字段值:', fieldName);
+                        return undefined;
+                }
+            }
+
+            // 获取类型徽章
+            function getKindBadge(kind) {
+                const safeKind = (kind || 'unknown').toLowerCase();
+                return `<span class="message-kind kind-${safeKind}">${kind || 'Unknown'}</span>`;
+            }
+
+            // 渲染消息列表
+            function render() {
+                const filteredMessages = getFilteredMessages();
+                const startIndex = state.offset;
+                const endIndex = Math.min(startIndex + state.limit, filteredMessages.length);
+                const pageMessages = filteredMessages.slice(startIndex, endIndex);
+
+                console.log('渲染消息列表:', {
+                    currentType: state.currentType,
+                    filteredCount: filteredMessages.length,
+                    pageCount: pageMessages.length,
+                    currentFields: state.currentFields
+                });
+
+                els.messageTableBody.innerHTML = '';
+
+                if (pageMessages.length === 0) {
+                    els.empty.style.display = '';
+                    return;
+                }
+                els.empty.style.display = 'none';
+
+                pageMessages.forEach((msg, index) => {
+                    console.log(`渲染第${index + 1}条消息:`, msg);
+
+                    const row = document.createElement('tr');
+                    row.className = msg.read_at > 0 ? 'read' : 'unread';
+
+                    // 选择框
+                    let rowHTML = `<td><input type="checkbox" data-id="${msg.id}" /></td>`;
+
+                    // 根据当前字段配置动态渲染
+                    state.currentFields.forEach(field => {
+                        const cellValue = getCellValue(msg, field.name);
+                        const formattedContent = formatCellContent(cellValue, field);
+                        rowHTML += `<td>${formattedContent}</td>`;
+                        console.log(`字段 ${field.name}:`, cellValue, '->', formattedContent);
+                    });
+
+                    row.innerHTML = rowHTML;
+                    els.messageTableBody.appendChild(row);
+                });
+
+                // 绑定复选框事件
+                els.messageTableBody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.addEventListener('change', (e) => {
+                        const id = e.target.dataset.id;
+                        if (e.target.checked) {
+                            state.selected.add(id);
+                        } else {
+                            state.selected.delete(id);
+                        }
+                        updateSelectionHint();
+                    });
+                });
+            }
+
+            // 更新选择提示
+            function updateSelectionHint() {
+                const n = state.selected.size;
+                els.btnMarkRead.disabled = n === 0;
+                els.btnDelete.disabled = n === 0;
+                els.selectedHint.style.display = n ? '' : 'none';
+                els.selectedHint.textContent = `已选 ${n} 条`;
+            }
+
+            // 更新表格标题
+            function updateTableTitle() {
+                const title = state.currentType === 'all' ? '全部消息' : getTypeDisplayName(state.currentType);
+                els.tableTitle.textContent = title;
+            }
+
+            // 过滤和渲染
+            function filterAndRender() {
+                const filteredMessages = getFilteredMessages();
+                const totalFiltered = filteredMessages.length;
+
+                render();
+
+                // 更新分页信息
+                const page = Math.floor(state.offset / state.limit) + 1;
+                const totalPages = Math.max(1, Math.ceil(totalFiltered / state.limit));
+                els.pageInfo.textContent = `第 ${page} / ${totalPages} 页`;
+
+                els.prev.disabled = state.offset <= 0;
+                els.next.disabled = state.offset + state.limit >= totalFiltered;
+
+                state.selected.clear();
+                updateSelectionHint();
+            }
+
+            // 加载消息数据
+            async function loadMessages() {
+                const user_id = els.userId.value.trim();
+                if (!user_id) return alert('请填写用户ID');
+
+                els.loading.style.display = '';
+                els.empty.style.display = 'none';
+
+                const status = els.status.value;
+                const url = `/dynamic-inbox?user_id=${encodeURIComponent(user_id)}&status=${encodeURIComponent(status)}&offset=0&limit=1000`;
+
+                try {
+                    const data = await fetchJson(url);
+                    state.allMessages = data.data || [];
+                    state.total = data.total || 0;
+                    state.offset = 0;
+
+                    updateTypeCounts();
+                    els.totalBadge.textContent = `共 ${state.total} 条`;
+
+                    filterAndRender();
+                } catch (e) {
+                    console.error(e);
+                    alert('加载失败：' + e.message);
+                } finally {
+                    els.loading.style.display = 'none';
+                }
+            }
+
+            // 事件监听器
+            els.limit.addEventListener('change', () => {
+                state.limit = parseInt(els.limit.value, 10) || 20;
+                state.offset = 0;
+                filterAndRender();
+            });
+
+            els.btnLoad.addEventListener('click', loadMessages);
+
+            els.prev.addEventListener('click', () => {
+                state.offset = Math.max(0, state.offset - state.limit);
+                filterAndRender();
+            });
+
+            els.next.addEventListener('click', () => {
+                if (state.offset + state.limit < getFilteredMessages().length) {
+                    state.offset += state.limit;
+                    filterAndRender();
+                }
+            });
+
+            // 标记已读
+            els.btnMarkRead.addEventListener('click', async () => {
+                if (state.selected.size === 0) return;
+                const user_id = els.userId.value.trim();
+                const ids = Array.from(state.selected);
+                try {
+                    await fetchJson('/dynamic-inbox/mark_read', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id, ids }),
+                    });
+                    state.selected.clear();
+                    updateSelectionHint();
+                    await loadMessages();
+                } catch (e) {
+                    alert('标记失败：' + e.message);
+                }
+            });
+
+            // 删除消息
+            els.btnDelete.addEventListener('click', async () => {
+                if (state.selected.size === 0) return;
+                if (!confirm(`确定要删除选中的 ${state.selected.size} 条消息吗？此操作不可撤销！`)) return;
+
+                const user_id = els.userId.value.trim();
+                const ids = Array.from(state.selected);
+                try {
+                    await fetchJson('/dynamic-inbox/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id, ids }),
+                    });
+                    state.selected.clear();
+                    updateSelectionHint();
+                    await loadMessages();
+                } catch (e) {
+                    alert('删除失败：' + e.message);
+                }
+            });
+
+            // 初始化
+            async function init() {
+                console.log('开始初始化...');
+
+                // 先绑定事件，确保点击能正常工作
+                bindTypeFilterEvents();
+
+                console.log('正在加载消息格式...');
+                await loadMessageFormats();
+
+                console.log('当前消息格式状态:', state.messageFormats);
+                console.log('可用的消息格式键:', Object.keys(state.messageFormats));
+
+                updateTableTitle();
+                updateFieldsForCurrentType();
+
+                if (els.userId.value.trim()) {
+                    console.log('自动加载用户消息...');
+                    await loadMessages();
+                }
+
+                console.log('初始化完成');
+            }
+
+            init();
+        })();
+    </script>
+</body>
+
+</html>

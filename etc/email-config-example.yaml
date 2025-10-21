@@ -1,0 +1,52 @@
+# QQ邮箱配置示例
+# 使用前请按照以下步骤配置：
+
+# 1. 登录QQ邮箱网页版
+# 2. 点击"设置" -> "账户"
+# 3. 找到"POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务"
+# 4. 开启"POP3/SMTP服务"或"IMAP/SMTP服务"
+# 5. 会要求发送短信验证，按步骤操作
+# 6. 完成后会得到一个"授权码"，这个就是下面配置中的Password
+
+# QQ邮箱配置
+Email:
+  From: "1395449375@qq.com"                    # 替换为你的QQ邮箱
+  FromName: "Push Service Notification"        # 邮件发件人显示名称
+  SMTPHost: "smtp.qq.com"                      # QQ邮箱SMTP服务器
+  SMTPPort: 587                                # SMTP端口
+  Username: "1395449375@qq.com"                # 替换为你的QQ邮箱
+  Password: "wpffzatkfgwuhcgc"          # 替换为QQ邮箱授权码(16位)
+  UseTLS: true                                 # 使用TLS加密连接
+  Timeout: 10s
+  Retry: {MaxAttempts: 3, Backoff: 500ms}
+
+# 其他常见邮箱配置参考：
+
+# 163邮箱配置示例
+# Email:
+#   From: "your-email@163.com"
+#   FromName: "Push Service"
+#   SMTPHost: "smtp.163.com"
+#   SMTPPort: 587
+#   Username: "your-email@163.com"
+#   Password: "your-authorization-code"
+#   UseTLS: true
+#   Timeout: 10s
+#   Retry: {MaxAttempts: 3, Backoff: 500ms}
+
+# Gmail配置示例 (需要应用专用密码)
+# Email:
+#   From: "your-email@gmail.com"
+#   FromName: "Push Service"
+#   SMTPHost: "smtp.gmail.com"
+#   SMTPPort: 587
+#   Username: "your-email@gmail.com"
+#   Password: "your-app-password"
+#   UseTLS: true
+#   Timeout: 10s
+#   Retry: {MaxAttempts: 3, Backoff: 500ms}
+
+# 使用说明：
+# 1. 将上述配置复制到 etc/app.yaml 的 Providers 部分
+# 2. 替换实际的邮箱地址和授权码
+# 3. 重启服务即可使用邮件推送功能

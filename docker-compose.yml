@@ -1,0 +1,77 @@
+services:
+  nsqlookupd:
+    image: nsqio/nsq:v1.2.1
+    command: /nsqlookupd
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+    networks:
+      - backend
+
+  nsqd:
+    image: nsqio/nsq:v1.2.1
+    depends_on:
+      - nsqlookupd
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+    networks:
+      - backend
+
+  nsqadmin:
+    image: nsqio/nsq:v1.2.1
+    depends_on:
+      - nsqlookupd
+    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
+    ports:
+      - "4171:4171"
+    networks:
+      - backend
+
+  redis:
+    image: redis:7.2-alpine
+    ports:
+      - "6380:6379" # 修复：将主机端口改为 6380
+    command: [ "redis-server", "--appendonly", "yes" ]
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: push_service
+      MYSQL_USER: push_user
+      MYSQL_PASSWORD: push_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./migrations:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - backend
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: password
+    ports:
+      - "8081:80"
+    networks:
+      - backend
+
+networks:
+  backend:
+
+
+volumes:
+  redis_data:
+  mysql_data:
